@@ -15,6 +15,7 @@ public class Menu : MonoBehaviour
         Debug.Log(scene);
         SceneManager.LoadScene(scene);
         SettingsManager.Instance.gameState = GameState.inProgress;
+        SettingsManager.Instance.timerStarted = !SettingsManager.Instance.timerStarted;
     }
     public void OnQuitButton()
     {

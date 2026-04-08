@@ -1524,6 +1524,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SettingsManager
   difficulty: 0
+  timeRemaining: 300
+  gameState: 0
+  timerStarted: 0
 --- !u!1 &1043442982
 GameObject:
   m_ObjectHideFlags: 0

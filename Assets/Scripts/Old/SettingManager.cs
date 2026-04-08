@@ -15,14 +15,14 @@ public class SettingsManager : MonoBehaviour
     public Difficulty difficulty = Difficulty.Easy;
     public float timeRemaining = 300;
     public GameState gameState = GameState.unstarted;
-    private bool timerStarted = false;
+    public bool timerStarted = false;
 
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        timerStarted = !timerStarted;
+
     }
 
     public void OnDropdownChanged(int diff)

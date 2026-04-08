@@ -9,6 +9,7 @@ public class Timer : MonoBehaviour
     }
     void Update()
     {
-        text.text = $"{Mathf.FloorToInt(SettingsManager.Instance.timeRemaining / 60)}:{Mathf.FloorToInt(SettingsManager.Instance.timeRemaining % 60)}";
+        if (SettingsManager.Instance != null)
+            text.text = $"{Mathf.FloorToInt(SettingsManager.Instance.timeRemaining / 60)}:{Mathf.FloorToInt(SettingsManager.Instance.timeRemaining % 60)}";
     }
 }
