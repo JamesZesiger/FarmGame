@@ -9,8 +9,14 @@ EditorBuildSettings:
     path: Assets/Scenes/Menu.unity
     guid: 3ac41fe0cb8d41a4a9c1a18d3fc4d040
   - enabled: 1
-    path: Assets/Scenes/DevRoom.unity
+    path: Assets/Scenes/Grass.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Desert.unity
+    guid: 149d92172111f6d4984960bdb3330693
+  - enabled: 1
+    path: Assets/Scenes/Credits.unity
+    guid: 30af4b982c7176640a959c865e0191cc
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

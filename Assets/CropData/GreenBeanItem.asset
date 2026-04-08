@@ -16,4 +16,4 @@ MonoBehaviour:
   isStackable: 1
   maxStack: 99
   icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  baseValue: -100
+  baseValue: 300

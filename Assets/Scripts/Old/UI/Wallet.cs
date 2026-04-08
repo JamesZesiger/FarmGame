@@ -19,5 +19,9 @@ public class Wallet : MonoBehaviour
     public void UpdateWallet(int value)
     {
         playerCash += value;
+        if (playerCash >= 300)
+        {
+            SettingsManager.Instance.gameState = GameState.Win;
+        }
     }
 }

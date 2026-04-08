@@ -17,7 +17,8 @@ MonoBehaviour:
   growingPrefab: {fileID: 1524010281241650038, guid: d907130f648af82458814a774f827066, type: 3}
   readyPrefab: {fileID: 3008166924999846343, guid: 0e88bea729ea4d04eb8b1c6d676dfdc5, type: 3}
   item: {fileID: 11400000, guid: 1590d2bfbcd133e41922f4c58530ed97, type: 2}
-  seedToGrowingTime: 1
-  growingToReadyTime: 1
+  seedToGrowingTime: 10
+  growingToReadyTime: 6
+  value: 10
   regrowable: 1
-  regrowTime: 1
+  regrowTime: 6
