@@ -73,10 +73,15 @@ public class FarmGrid : MonoBehaviour
 
     void Update()
     {
-        if (!simulateStateLocally) return;
-
-        GrowCrops(Time.deltaTime);
-        DryTile(Time.deltaTime);
+        if (simulateStateLocally)
+        {
+            GrowCrops(Time.deltaTime);
+            DryTile(Time.deltaTime);
+        }
+        else
+        {
+            UpdateCropVisuals(Time.deltaTime);
+        }
     }
 
     void InitializeGrid()
@@ -471,6 +476,36 @@ public class FarmGrid : MonoBehaviour
             {
                 crop.progressUI.SetProgress(t);
             }
+        }
+    }
+
+    void UpdateCropVisuals(float deltaTime)
+    {
+        for (int i = activeCropTiles.Count - 1; i >= 0; i--)
+        {
+            var pos = activeCropTiles[i];
+            Tile tile = tiles[pos.x, pos.y];
+
+            if (tile.crop == null)
+            {
+                activeCropTiles.RemoveAt(i);
+                continue;
+            }
+
+            CropInstance crop = tile.crop;
+
+            if (tile.isWatered && crop.state != CropState.Ready)
+            {
+                crop.timer += deltaTime;
+            }
+
+            float duration = GetCropStateDuration(crop);
+            if (duration > 0f)
+            {
+                crop.timer = Mathf.Clamp(crop.timer, 0f, duration);
+            }
+
+            UpdateCropPresentation(crop);
         }
     }
 
@@ -874,6 +909,23 @@ public class FarmGrid : MonoBehaviour
         if (crop.progressUI != null)
         {
             crop.progressUI.SetProgress(t);
+        }
+    }
+
+    float GetCropStateDuration(CropInstance crop)
+    {
+        if (crop == null || crop.data == null)
+            return 0f;
+
+        switch (crop.state)
+        {
+            case CropState.Seed:
+                return crop.data.seedToGrowingTime;
+            case CropState.Growing:
+            case CropState.ReGrowing:
+                return crop.data.growingToReadyTime;
+            default:
+                return 0f;
         }
     }
 }

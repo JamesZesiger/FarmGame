@@ -2120,14 +2120,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2381196744
+  GlobalObjectIdHash: 2674556313
   InScenePlacedSourceGlobalObjectIdHash: 2674556313
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
+  ActiveSceneSynchronization: 1
+  SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -2222,10 +2222,10 @@ MonoBehaviour:
   - {fileID: -1837081866918056386, guid: 1e358e2f22ff01249a12ba17cafaae8d, type: 3}
   - {fileID: 5633802165923680625, guid: ebe61f564748ea940990e3d89ef05828, type: 3}
   - {fileID: 4025594657798938731, guid: 305419b4deef8714cad0f472c1ce91f3, type: 3}
+  - {fileID: 5374165551689763522, guid: 8de27c3adf1402842868bed194d644bd, type: 3}
+  - {fileID: 3756250187738359714, guid: 083373455937a3f4caa0cb2820a83cb9, type: 3}
   - {fileID: 6536107753462126578, guid: aee771240cd3ba24bb8c60d73bb88510, type: 3}
   - {fileID: 6536107753462126578, guid: 8ed6f7c69bb92c94db3dcc5de3005bbd, type: 3}
-  - {fileID: 3756250187738359714, guid: 083373455937a3f4caa0cb2820a83cb9, type: 3}
-  - {fileID: 5374165551689763522, guid: 8de27c3adf1402842868bed194d644bd, type: 3}
   - {fileID: 6536107753462126578, guid: 0733b163fb9eb3548a45e4fbfcee9cf5, type: 3}
   toolHolder: {fileID: 3652580647643841320}
   tilePreviewScript: {fileID: 4762591400227405367}
@@ -2302,7 +2302,7 @@ MonoBehaviour:
   RotationMaxInterpolationTime: 0.1
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
+  AuthorityMode: 1
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1

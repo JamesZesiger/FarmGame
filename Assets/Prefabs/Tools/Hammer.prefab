@@ -307,9 +307,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 07e7e492115c99645b8c41127f09d0cf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5374165551689763522}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 07e7e492115c99645b8c41127f09d0cf, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4857127140382248096}
   m_SourcePrefab: {fileID: 100100000, guid: 07e7e492115c99645b8c41127f09d0cf, type: 3}
 --- !u!1 &7109096469617622826 stripped
 GameObject:
@@ -335,6 +332,7 @@ MonoBehaviour:
   isConsumable: 0
   cam: {fileID: 0}
   grid: {fileID: 0}
+  gridNetwork: {fileID: 0}
   terrainMask:
     serializedVersion: 2
     m_Bits: 64
@@ -342,31 +340,6 @@ MonoBehaviour:
   preview: {fileID: 0}
   hammerUI: {fileID: 4926685304230378552}
   structureSet: {fileID: 11400000, guid: b2785a8a3dac4e748a68dc20705d4cac, type: 2}
---- !u!114 &4857127140382248096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7109096469617622826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!4 &7630018327548192144 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 07e7e492115c99645b8c41127f09d0cf, type: 3}

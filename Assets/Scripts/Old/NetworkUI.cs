@@ -1,34 +1,41 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NetworkUI : MonoBehaviour
 {
+    const string gameplaySceneName = "Grass";
+
     public GameObject NetworkPanel;
     public Menu menu;
 
 
     public void OnHostButton()
     {
-        if (NetworkManager.Singleton == null) return;
+        if (NetworkManager.Singleton == null)
+            return;
 
         if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
         {
-            NetworkManager.Singleton.StartHost();
+            bool started = NetworkManager.Singleton.StartServer();
+            if (!started)
+                return;
 
-            // Load scene properly through Netcode
-            NetworkManager.Singleton.SceneManager.LoadScene("Grass", UnityEngine.SceneManagement.LoadSceneMode.Single);
+            if (SceneManager.GetActiveScene().name != gameplaySceneName)
+            {
+                NetworkManager.Singleton.SceneManager.LoadScene(gameplaySceneName, LoadSceneMode.Single);
+            }
         }
     }
+
     public void OnClientButton()
     {
-         if (NetworkManager.Singleton == null)
+        if (NetworkManager.Singleton == null)
             return;
+
         if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
         {
-            menu.OnPlayButton();
             NetworkManager.Singleton.StartClient();
-            
         }
     }
-    
 }

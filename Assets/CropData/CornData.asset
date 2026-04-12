@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dadd1927bd2799245878aa8fb06b1f83, type: 3}
   m_Name: CornData
   m_EditorClassIdentifier: Assembly-CSharp::CropData
-  cropName: 
+  cropName: Corn
   seedPrefab: {fileID: 6075288191169580723, guid: a661a48ce3fcd874b9218f0bf4448f6f, type: 3}
   growingPrefab: {fileID: 1524010281241650038, guid: d907130f648af82458814a774f827066, type: 3}
   readyPrefab: {fileID: 3008166924999846343, guid: 0e88bea729ea4d04eb8b1c6d676dfdc5, type: 3}

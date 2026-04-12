@@ -9,12 +9,14 @@ public class CropProgressUI : MonoBehaviour
     public float fadeStartDistance = 3f;
     public float fadeEndDistance = 6f;
 
-    private Transform target;
-    private float currentProgress;
+    Transform _target;
+    float currentProgress;
+    PlayerController _localPlayer;
+    Camera _localCamera;
 
     public void Initialize(Transform target)
     {
-        this.target = target;
+        _target = target;
 
         currentProgress = 0f;
         fillImage.fillAmount = 0f;
@@ -28,29 +30,51 @@ public class CropProgressUI : MonoBehaviour
         currentProgress = t;
         fillImage.fillAmount = t;
     }
+
     void Update()
     {
-        var localPlayer = PlayerController.LocalPlayer;
-        if (localPlayer == null) return;
+        ResolveLocalReferences();
 
-        var cam = localPlayer.PlayerCamera;
-        if (cam == null)
+        if (_localPlayer == null || _localCamera == null)
         {
-            Debug.LogWarning("Camera is NULL on LocalPlayer!");
+            canvasGroup.alpha = 0f;
             return;
         }
-        if (target == null || cam == null || localPlayer == null) return;
 
-        Vector3 worldPos = target.position + Vector3.up * 1.5f;
+        if (_target == null)
+        {
+            canvasGroup.alpha = 0f;
+            return;
+        }
+
+        Vector3 worldPos = _target.position + Vector3.up * 1.5f;
         transform.position = worldPos;
-        transform.forward = cam.transform.forward;
+        transform.forward = _localCamera.transform.forward;
 
-        float dist = Vector3.Distance(localPlayer.transform.position, target.position);
+        float dist = Vector3.Distance(_localPlayer.transform.position, _target.position);
         float alpha = Mathf.InverseLerp(fadeEndDistance, fadeStartDistance, dist);
 
         if (currentProgress >= 1f)
             alpha = 0f;
 
         canvasGroup.alpha = alpha;
+    }
+
+    void ResolveLocalReferences()
+    {
+        if (_localPlayer == null || !_localPlayer.IsSpawned)
+        {
+            _localPlayer = PlayerController.LocalPlayer;
+        }
+
+        if (_localPlayer != null)
+        {
+            _localCamera = _localPlayer.PlayerCamera;
+        }
+
+        if (_localCamera == null)
+        {
+            _localCamera = Camera.main;
+        }
     }
 }
