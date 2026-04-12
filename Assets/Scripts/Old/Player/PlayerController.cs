@@ -70,6 +70,7 @@ public class PlayerController : NetworkBehaviour
 
         if (playerCamera != null)
             playerCamera.enabled = false;
+
     }
 
     public override void OnNetworkSpawn()
@@ -94,7 +95,12 @@ public class PlayerController : NetworkBehaviour
         if (playerCamera != null)
             playerCamera.enabled = true;
 
-        LocalPlayer = this;
+        if (IsOwner)
+        {
+            LocalPlayer = this;
+
+            Debug.Log($"LocalPlayer set. Camera = {PlayerCamera}");
+        }
 
         if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4be750d7ca72dda45a124e55bd29cc7c, type: 3}
+  m_Name: HammerSet
+  m_EditorClassIdentifier: Assembly-CSharp::StructureSet
+  Structures:
+  - {fileID: 8579614260903587056, guid: ebb0edb0a09e98c4fad2e4dad19e6e22, type: 3}
+  - {fileID: 7237021027203891246, guid: f1a828605f2ad4d44be8a7d4a1479190, type: 3}
+  - {fileID: 419954988034664439, guid: bc5941b2fb0aa214ea1f59a61f962ab3, type: 3}
+  - {fileID: 8579614260903587056, guid: ebb0edb0a09e98c4fad2e4dad19e6e22, type: 3}
+  Sprites:
+  - {fileID: 10915, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  x_rotation: -90

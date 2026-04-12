@@ -4,6 +4,7 @@ public class FarmInteraction : MonoBehaviour
 {
     public Camera cam;
     public FarmGrid grid;
+    public FarmGridNetwork gridNetwork;
     public LayerMask terrainMask;
     public float range = 100f;
     public GameObject preview;
@@ -26,19 +27,21 @@ public class FarmInteraction : MonoBehaviour
     void ResolveFarmGrid()
     {
         if (grid == null)
+        {
             grid = FindFirstObjectByType<FarmGrid>();
+        }
+
+        if (gridNetwork == null)
+        {
+            gridNetwork = FindFirstObjectByType<FarmGridNetwork>();
+        }
     }
 
     public void Interact()
     {
-        if (grid == null || preview == null) return;
+        if (grid == null || gridNetwork == null || preview == null) return;
 
         Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-        Tile tile = grid.GetTile(gridPos.x, gridPos.y);
-        if (tile != null)
-            {
-                grid.TillTile(gridPos.x,gridPos.y);
-                tile.type = TileType.Tilled;
-            }
+        gridNetwork.TillServerRpc(gridPos.x, gridPos.y);
     }
 }

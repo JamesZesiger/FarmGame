@@ -161,7 +161,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &6523306308850954202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,7 +195,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 4808007312052835898}
   fadeStartDistance: 2
   fadeEndDistance: 4
-  player: {fileID: 7523265889633547192, guid: daf3266179e7fc240914e39a72b0b443, type: 3}
 --- !u!225 &4808007312052835898
 CanvasGroup:
   m_ObjectHideFlags: 0

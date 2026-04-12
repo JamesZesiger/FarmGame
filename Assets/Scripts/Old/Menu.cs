@@ -33,11 +33,7 @@ public class Menu : MonoBehaviour
 
     public void OnToggleStartButton()
     {
-                Debug.Log("start");
-
         StartPanelIsOpen = !StartPanelIsOpen;
-                Debug.Log(StartPanelIsOpen);
-
         StartPanel.SetActive(StartPanelIsOpen);
     }
 }

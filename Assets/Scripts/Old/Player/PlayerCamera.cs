@@ -24,7 +24,8 @@ public class PlayerCamera : NetworkBehaviour
     void Awake()
     {
         isCameraLocked = lockOveride;
-        cam = Camera.main ?? cam;
+        if (cam == null)
+            cam = GetComponentInChildren<Camera>();
 
         if (cameraPivot == null)
             cameraPivot = transform;

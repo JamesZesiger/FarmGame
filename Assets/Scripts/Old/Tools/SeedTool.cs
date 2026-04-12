@@ -4,6 +4,7 @@ public class SeedTool : Tool
 {
     private FarmGrid grid;
     private GameObject preview;
+    private FarmGridNetwork _gridNetwork;
 
     public CropData cropToPlant;
 
@@ -11,15 +12,27 @@ public class SeedTool : Tool
     {
         this.grid = grid;
         this.preview = preview;
+        ResolveGridNetwork();
     }
 
     public override void Use()
     {
-        Vector2Int pos = grid.WorldToGrid(preview.transform.position);
+        if (grid == null || preview == null || _gridNetwork == null || cropToPlant == null) return;
 
-        bool sucsess = grid.PlantCrop(pos.x, pos.y, cropToPlant);
-        if (isConsumable && sucsess) numUses -= 1;
-        Debug.Log(numUses);
+        Vector2Int pos = grid.WorldToGrid(preview.transform.position);
+        Tile tile = grid.GetTile(pos.x, pos.y);
+        if (tile == null || tile.type != TileType.Tilled || tile.crop != null) return;
+
+        _gridNetwork.PlantServerRpc(pos.x, pos.y, cropToPlant.cropName);
+        if (isConsumable) numUses -= 1;
     }
     protected override void AltUse(){}
+
+    void ResolveGridNetwork()
+    {
+        if (_gridNetwork == null)
+        {
+            _gridNetwork = FarmGridNetwork.Instance;
+        }
+    }
 }

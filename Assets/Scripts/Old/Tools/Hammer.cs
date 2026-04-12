@@ -6,6 +6,7 @@ public class Hammer : Tool
 {
     public Camera cam;
     public FarmGrid grid;
+    public FarmGridNetwork gridNetwork;
     public LayerMask terrainMask;
     public float range = 100f;
     public GameObject preview;
@@ -16,10 +17,10 @@ public class Hammer : Tool
     
     public override void Initialize(Camera cam, FarmGrid grid, GameObject preview)
     {
-        //this.hammerUI = GetComponentInChildren<HammerUI>();
         this.cam = cam;
         this.grid = grid;
         this.preview = preview;
+        ResolveGridNetwork();
     }
 
      void Awake()
@@ -56,17 +57,25 @@ public class Hammer : Tool
     }
     public override void Use()
     {
-        if (IsOpen) return;
+        if (IsOpen || grid == null || preview == null || gridNetwork == null) return;
 
         if(hammerUI.selectedIndex == 0)
         {
             Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-            grid.RemoveStructure(gridPos.x, gridPos.y);
+            gridNetwork.RemoveStructureServerRpc(gridPos.x, gridPos.y);
         }
         else
         {
             Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-            grid.SetTileType(gridPos.x, gridPos.y, TileType.Building, hammerUI.selectedIndex);
+            gridNetwork.PlaceStructureServerRpc(gridPos.x, gridPos.y, hammerUI.selectedIndex);
+        }
+    }
+
+    void ResolveGridNetwork()
+    {
+        if (gridNetwork == null)
+        {
+            gridNetwork = FarmGridNetwork.Instance;
         }
     }
 }

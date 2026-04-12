@@ -30,9 +30,15 @@ public class CropProgressUI : MonoBehaviour
     }
     void Update()
     {
-        PlayerController localPlayer = PlayerController.LocalPlayer;
-        Camera cam = localPlayer != null ? localPlayer.PlayerCamera : null;
+        var localPlayer = PlayerController.LocalPlayer;
+        if (localPlayer == null) return;
 
+        var cam = localPlayer.PlayerCamera;
+        if (cam == null)
+        {
+            Debug.LogWarning("Camera is NULL on LocalPlayer!");
+            return;
+        }
         if (target == null || cam == null || localPlayer == null) return;
 
         Vector3 worldPos = target.position + Vector3.up * 1.5f;
