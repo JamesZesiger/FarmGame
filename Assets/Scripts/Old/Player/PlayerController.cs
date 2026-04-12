@@ -1,18 +1,24 @@
 using UnityEngine;
+using Unity.Netcode;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
+    public static readonly System.Collections.Generic.List<PlayerController> ActivePlayers = new();
+    public static PlayerController LocalPlayer { get; private set; }
+
     [Header("References")]
     public Animator animator;
     [SerializeField] Transform model; // visual mesh
     [SerializeField] Transform cameraTransform;
+    [SerializeField] PlayerCamera playerCamera;
     public FarmInteraction farmInteraction;
     [SerializeField] ToolManager toolManager;
     [SerializeField] UIManager uiManager;
     [SerializeField] Inventory playerInventory;
+    [SerializeField] Wallet playerWallet;
 
     [Header("Movement")]
     [SerializeField] float walkSpeed = 6f;
@@ -30,6 +36,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float spawnRate = 0.15f;
 
     CharacterController controller;
+    PlayerInput playerInput;
 
     Vector2 moveInput;
     Vector3 velocity;
@@ -40,20 +47,84 @@ public class PlayerController : MonoBehaviour
 
     float nextSpawnTime;
 
+    public Inventory PlayerInventory => playerInventory;
+    public UIManager UIManager => uiManager;
+    public Wallet PlayerWallet => playerWallet;
+    public Camera PlayerCamera => playerCamera != null ? playerCamera.cam : cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        playerInput = GetComponent<PlayerInput>();
 
-        // fallback if not assigned
-        if (cameraTransform == null)
+        if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;
+
         if (farmInteraction == null)
             farmInteraction = GetComponent<FarmInteraction>();
 
+        if (playerCamera == null)
+            playerCamera = GetComponentInChildren<PlayerCamera>();
+
+        if (playerCamera != null)
+            playerCamera.enabled = false;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (!ActivePlayers.Contains(this))
+            ActivePlayers.Add(this);
+
+        if (playerInput != null)
+            playerInput.enabled = IsOwner;
+
+        if (!IsOwner)
+        {
+            enabled = false;
+            if (playerCamera != null)
+                playerCamera.enabled = false;
+            if (uiManager != null)
+                uiManager.gameObject.SetActive(false);
+            return;
+        }
+
+        if (playerCamera != null)
+            playerCamera.enabled = true;
+
+        if (uiManager != null)
+        {
+            uiManager.gameObject.SetActive(true);
+            uiManager.BindPlayer(this);
+        }
+
+        LocalPlayer = this;
+
+        if (cameraTransform == null && Camera.main != null)
+            cameraTransform = Camera.main.transform;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        ActivePlayers.Remove(this);
+
+        if (LocalPlayer == this)
+            LocalPlayer = null;
+    }
+
+    void OnDestroy()
+    {
+        ActivePlayers.Remove(this);
+
+        if (LocalPlayer == this)
+            LocalPlayer = null;
     }
 
     void Update()
     {
+        if (!IsOwner) return;
         GroundCheck();
         HandleMovement();
         ApplyGravity();
@@ -167,44 +238,51 @@ public class PlayerController : MonoBehaviour
 
     void OnMove(InputValue value)
     {
+        if (!IsOwner) return;
         moveInput = value.Get<Vector2>();
     }
 
     void OnSprint(InputValue value)
     {
+        if (!IsOwner) return;
         isSprinting = value.isPressed;
     }
 
     void OnJump(InputValue value)
     {
+        if (!IsOwner) return;
         if (value.isPressed)
             Jump();
     }
 
     void OnUseTool(InputValue value)
     {
-        if (value.isPressed)
-            toolManager.OnUse();
+        if (!IsOwner || !value.isPressed) return;
+        toolManager.OnUse();
     }
+
     void OnNext(InputValue value)
     {
-        if (value.isPressed)
-            toolManager.NextTool();
+        if (!IsOwner || !value.isPressed) return;
+        toolManager.NextTool();
     }
+
     void OnInventory(InputValue value)
     {
-        if (!value.isPressed) return;
-
-        uiManager.TogglePlayerInventory(playerInventory);
+        if (!IsOwner || !value.isPressed) return;
+        uiManager.TogglePlayerInventory();
     }
 
     void OnAltUseTool(InputValue value)
     {
-        if (value.isPressed)
-            toolManager.AltUse();
+        if (!IsOwner || !value.isPressed) return;
+        toolManager.AltUse();
     }
+
     void OnAlt(InputValue value)
     {
+        if (!IsOwner) return;
+
         if (!Cursor.visible)
         {
             Cursor.lockState = CursorLockMode.None;
@@ -213,10 +291,7 @@ public class PlayerController : MonoBehaviour
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false; 
+            Cursor.visible = false;
         }
-        
-
-
     }
 }

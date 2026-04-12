@@ -38,8 +38,7 @@ public class Hammer : Tool
 
 
     protected override void AltUse()
-    {
-        PlayerCamera.Instance.ToggleCameraLock(!IsOpen);
+    {   
         if (IsOpen)
         {
            hammerUI.gameObject.SetActive(false); 

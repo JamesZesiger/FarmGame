@@ -3,11 +3,10 @@ using UnityEngine;
 public class Container : MonoBehaviour, IInteractable
 {
     public Inventory inventory;
-    public UIManager uiManager;
-    public Inventory playerInventory;
 
     public void Interact(PlayerInteraction player)
     {
-        uiManager.OpenContainer(playerInventory, inventory);
+        if (player == null || player.UIManager == null) return;
+        player.UIManager.OpenContainer(player.PlayerInventory, inventory);
     }
 }

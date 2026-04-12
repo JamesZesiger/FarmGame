@@ -16,8 +16,8 @@ public class ChickenAI : MonoBehaviour
     private float animState;
 
     public Animator animator;
-    public Transform player;
     private NavMeshAgent agent;
+    private Transform currentTarget;
 
     [Header("Movement")]
     public float wanderRadius = 10f;
@@ -48,7 +48,10 @@ public class ChickenAI : MonoBehaviour
 
     void Update()
     {
-        float distance = Vector3.Distance(transform.position, player.position);
+        currentTarget = FindClosestPlayer();
+        float distance = currentTarget != null
+            ? Vector3.Distance(transform.position, currentTarget.position)
+            : float.PositiveInfinity;
 
         // GLOBAL TRANSITIONS
         if (distance < detectDistance)
@@ -116,10 +119,16 @@ public class ChickenAI : MonoBehaviour
 
     void UpdateFlee()
     {
+        if (currentTarget == null)
+        {
+            ChangeState(State.Idle);
+            return;
+        }
+
         agent.isStopped = false;
         agent.speed = runSpeed;
 
-        Vector3 direction = (transform.position - player.position).normalized;
+        Vector3 direction = (transform.position - currentTarget.position).normalized;
         Vector3 fleeTarget = transform.position + direction * wanderRadius;
 
         NavMeshHit hit;
@@ -166,5 +175,25 @@ public class ChickenAI : MonoBehaviour
 
         animator.SetFloat("Vert", vert);
         animator.SetFloat("State", animState);
+    }
+
+    Transform FindClosestPlayer()
+    {
+        Transform closest = null;
+        float closestDistanceSqr = float.PositiveInfinity;
+
+        foreach (PlayerController player in PlayerController.ActivePlayers)
+        {
+            if (player == null) continue;
+
+            float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+            if (distanceSqr < closestDistanceSqr)
+            {
+                closestDistanceSqr = distanceSqr;
+                closest = player.transform;
+            }
+        }
+
+        return closest;
     }
 }

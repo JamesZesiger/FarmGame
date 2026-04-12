@@ -1,74 +1,74 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Needed for Input System
+using UnityEngine.InputSystem;
 
 public class TilePreview : MonoBehaviour
 {
-    public Camera mainCamera; // Assign in Inspector
+    public Camera mainCamera;
     public GameObject cam;
     public FarmGrid farmGrid;
     public LayerMask terrainMask;
     public float range = 10f;
     public float height = 0.36f;
 
-    public bool useMousePosition = false; // Toggle between camera and mouse
+    public bool useMousePosition = false;
     public bool isEnabled;
 
     private Renderer rend;
     private Material mat;
-    private Color originalColor;
 
     void Awake()
     {
+        ResolveCameraReferences();
+
         rend = GetComponent<Renderer>();
         if (rend != null)
         {
-            mat = rend.material; // Use instance material
-            originalColor = mat.color;
+            mat = rend.material;
             SetAlpha(0f);
         }
+
         isEnabled = false;
     }
 
     void Update()
     {
+        ResolveCameraReferences();
+
+        if (farmGrid == null)
+        {
+            SetAlpha(0f);
+            isEnabled = false;
+            return;
+        }
+
         useMousePosition = Cursor.visible;
         Vector3 targetPos = Vector3.zero;
         bool hitDetected = false;
 
-       if (useMousePosition)
+        if (useMousePosition)
         {
-            if (Mouse.current != null) // ✅ Make sure the mouse exists
+            if (Mouse.current != null && mainCamera != null)
             {
                 Vector2 mousePos = Mouse.current.position.ReadValue();
-                if (mousePos != null)
-                {
-                   Ray ray = mainCamera.ScreenPointToRay(mousePos);
+                Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
-                    if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, terrainMask))
-                    {
-                        if (hit.collider.CompareTag("Ground"))
-                        {
-                            hitDetected = true;
-                            targetPos = hit.point;
-                        }
-                    } 
-                }
-                
-            }
-        }
-        else
-        {
-            // Camera forward method
-            Vector3 dir = cam.transform.forward;
-            dir.Normalize();
-
-            if (Physics.Raycast(cam.transform.position, dir, out RaycastHit hit, range, terrainMask))
-            {
-                if (hit.collider.CompareTag("Ground"))
+                if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, terrainMask) &&
+                    hit.collider.CompareTag("Ground"))
                 {
                     hitDetected = true;
                     targetPos = hit.point;
                 }
+            }
+        }
+        else if (cam != null)
+        {
+            Vector3 dir = cam.transform.forward.normalized;
+
+            if (Physics.Raycast(cam.transform.position, dir, out RaycastHit hit, range, terrainMask) &&
+                hit.collider.CompareTag("Ground"))
+            {
+                hitDetected = true;
+                targetPos = hit.point;
             }
         }
 
@@ -90,13 +90,24 @@ public class TilePreview : MonoBehaviour
         }
     }
 
+    void ResolveCameraReferences()
+    {
+        if (mainCamera == null && PlayerController.LocalPlayer != null)
+            mainCamera = PlayerController.LocalPlayer.PlayerCamera;
+
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (cam == null && mainCamera != null)
+            cam = mainCamera.gameObject;
+    }
+
     void SetAlpha(float alpha)
     {
-        if (mat != null)
-        {
-            Color c = mat.color;
-            c.a = alpha;
-            mat.color = c;
-        }
+        if (mat == null) return;
+
+        Color color = mat.color;
+        color.a = alpha;
+        mat.color = color;
     }
 }

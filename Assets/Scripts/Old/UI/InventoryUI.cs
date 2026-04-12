@@ -41,6 +41,11 @@ public class InventoryUI : MonoBehaviour
         UpdateUI();
     }
 
+    public void Awake()
+    {
+        this.gameObject.SetActive(isOpen);
+    }
+
     public void UpdateUI()
     {
         if (currentInventory == null) return;

@@ -1,10 +1,9 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerCamera : MonoBehaviour
+public class PlayerCamera : NetworkBehaviour
 {
-    public static PlayerCamera Instance { get; private set; }
-
     [Header("References")]
     [SerializeField] Transform cameraPivot;
 
@@ -25,16 +24,25 @@ public class PlayerCamera : MonoBehaviour
     void Awake()
     {
         isCameraLocked = lockOveride;
+        cam = Camera.main ?? cam;
+
+        if (cameraPivot == null)
+            cameraPivot = transform;
+
+        targetRotation = cameraPivot.localRotation;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        enabled = IsOwner;
+        if (!IsOwner)
+            return;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-
-
-        cam = Camera.main;
-
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
+        if (cameraPivot == null)
+            cameraPivot = transform;
 
         targetRotation = cameraPivot.localRotation;
     }
@@ -80,6 +88,7 @@ public class PlayerCamera : MonoBehaviour
 
     void OnLook(InputValue value)
     {
+        if (!IsOwner) return;
         lookInput = value.Get<Vector2>();
     }
 
@@ -91,15 +100,13 @@ public class PlayerCamera : MonoBehaviour
 
     public void OnCameraRight(InputValue value)
     {
-        if (!lockOveride) return;
-
-        targetRotation *= Quaternion.Euler(0, 90f, 0); // rotate 90° right smoothly
+        if (!IsOwner || !lockOveride) return;
+        targetRotation *= Quaternion.Euler(0, 90f, 0);
     }
 
     public void OnCameraLeft(InputValue value)
     {
-        if (!lockOveride) return;
-
-        targetRotation *= Quaternion.Euler(0, -90f, 0); // rotate 90° left smoothly
+        if (!IsOwner || !lockOveride) return;
+        targetRotation *= Quaternion.Euler(0, -90f, 0);
     }
 }

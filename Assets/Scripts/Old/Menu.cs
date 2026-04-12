@@ -3,11 +3,14 @@ using UnityEngine.SceneManagement;
 public class Menu : MonoBehaviour
 {
     public GameObject settingsPanel;
-    private bool isOpen = false;
+    public GameObject StartPanel;
+    private bool settingsPanelIsOpen = false;
+    private bool StartPanelIsOpen = false;
 
     void Awake()
     {
-        settingsPanel.SetActive(isOpen);
+        settingsPanel.SetActive(settingsPanelIsOpen);
+        StartPanel.SetActive(settingsPanelIsOpen);
     }
     public void OnPlayButton()
     {
@@ -24,7 +27,17 @@ public class Menu : MonoBehaviour
 
     public void OnToggleSettingsButton()
     {
-        isOpen = !isOpen;
-        settingsPanel.SetActive(isOpen);
+        settingsPanelIsOpen = !settingsPanelIsOpen;
+        settingsPanel.SetActive(settingsPanelIsOpen);
+    }
+
+    public void OnToggleStartButton()
+    {
+                Debug.Log("start");
+
+        StartPanelIsOpen = !StartPanelIsOpen;
+                Debug.Log(StartPanelIsOpen);
+
+        StartPanel.SetActive(StartPanelIsOpen);
     }
 }

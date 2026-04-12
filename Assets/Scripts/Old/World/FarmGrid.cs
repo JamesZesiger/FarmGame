@@ -21,9 +21,6 @@ public class FarmGrid : MonoBehaviour
     public Transform tileParent;
     public Vector3 originPosition;
     public GameObject progressUIPrefab;
-    public Inventory playerInventory;
-    public Transform player;
-    public Camera cam;
 
     private Tile[,] tiles;
     private ToolType currentTool = ToolType.Hoe;
@@ -374,7 +371,7 @@ public class FarmGrid : MonoBehaviour
 
         GameObject uiObj = GetFromPool(progressUIPrefab);
         CropProgressUI ui = uiObj.GetComponent<CropProgressUI>();
-        ui.Initialize(crop.visual.transform, cam, player);
+        ui.Initialize(crop.visual.transform);
 
         crop.progressUI = ui;
     }
@@ -451,6 +448,8 @@ public class FarmGrid : MonoBehaviour
 
     public bool TryHarvest(int x, int z, Inventory targetInventory)
     {
+        if (targetInventory == null) return false;
+
         Tile tile = GetTile(x, z);
         if (tile?.crop == null) return false;
 

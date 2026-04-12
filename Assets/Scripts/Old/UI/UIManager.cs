@@ -5,6 +5,7 @@ public class UIManager : MonoBehaviour
     public InventoryUI playerUI;
     public InventoryUI containerUI;
 
+    private PlayerController currentPlayer;
     public Inventory currentPlayerInventory;
     public Inventory currentContainerInventory;
 
@@ -12,15 +13,22 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
-        playerUI.gameObject.SetActive(false);
-        containerUI.gameObject.SetActive(false);
+        if (playerUI != null)
+            playerUI.gameObject.SetActive(false);
 
-        SetCursor(false);
+        if (containerUI != null)
+            containerUI.gameObject.SetActive(false);
+
         IsOpen = false;
     }
 
-    // ---------------- PLAYER ONLY ----------------
-    public void TogglePlayerInventory(Inventory playerInventory)
+    public void BindPlayer(PlayerController player)
+    {
+        currentPlayer = player;
+        currentPlayerInventory = player != null ? player.PlayerInventory : null;
+    }
+
+    public void TogglePlayerInventory()
     {
         if (IsOpen)
         {
@@ -28,47 +36,64 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            OpenPlayerInventory(playerInventory);
+            OpenPlayerInventory();
         }
     }
 
-    public void OpenPlayerInventory(Inventory playerInventory)
+    public void OpenPlayerInventory()
     {
+        Inventory playerInventory = currentPlayer != null ? currentPlayer.PlayerInventory : currentPlayerInventory;
+        if (playerInventory == null) return;
+
         currentPlayerInventory = playerInventory;
+        currentContainerInventory = null;
 
-        playerUI.Init(playerInventory);
-        playerUI.gameObject.SetActive(true);
+        if (playerUI != null)
+        {
+            playerUI.Init(playerInventory);
+            playerUI.gameObject.SetActive(true);
+        }
 
-        containerUI.gameObject.SetActive(false);
+        if (containerUI != null)
+            containerUI.gameObject.SetActive(false);
 
         SetCursor(true);
         IsOpen = true;
     }
 
-    // ---------------- CONTAINER ----------------
     public void OpenContainer(Inventory playerInventory, Inventory containerInventory)
     {
+        if (playerInventory == null || containerInventory == null) return;
+
+        currentPlayer = currentPlayer == null ? PlayerController.LocalPlayer : currentPlayer;
         currentPlayerInventory = playerInventory;
         currentContainerInventory = containerInventory;
 
-        // Player UI
-        playerUI.Init(playerInventory);
-        playerUI.gameObject.SetActive(true);
+        if (playerUI != null)
+        {
+            playerUI.Init(playerInventory);
+            playerUI.gameObject.SetActive(true);
+        }
 
-        // Container UI
-        containerUI.Init(containerInventory);
-        containerUI.gameObject.SetActive(true);
+        if (containerUI != null)
+        {
+            containerUI.Init(containerInventory);
+            containerUI.gameObject.SetActive(true);
+        }
 
         SetCursor(true);
         IsOpen = true;
     }
 
-    // ---------------- CLOSE ----------------
     public void CloseAll()
     {
         ItemTransferHandler.Instance?.ClearSelection();
-        playerUI.gameObject.SetActive(false);
-        containerUI.gameObject.SetActive(false);
+
+        if (playerUI != null)
+            playerUI.gameObject.SetActive(false);
+
+        if (containerUI != null)
+            containerUI.gameObject.SetActive(false);
 
         currentContainerInventory = null;
 
@@ -80,8 +105,6 @@ public class UIManager : MonoBehaviour
     {
         Cursor.lockState = state ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = state;
-        PlayerCamera.Instance.ToggleCameraLock(state);
-
     }
 
     public Inventory GetOtherInventory(Inventory source)
@@ -97,7 +120,10 @@ public class UIManager : MonoBehaviour
 
     public void RefreshAll()
     {
-        playerUI.UpdateUI();
-        containerUI.UpdateUI();
+        if (playerUI != null && playerUI.gameObject.activeSelf)
+            playerUI.UpdateUI();
+
+        if (containerUI != null && containerUI.gameObject.activeSelf)
+            containerUI.UpdateUI();
     }
 }

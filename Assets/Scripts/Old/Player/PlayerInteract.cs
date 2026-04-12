@@ -12,6 +12,16 @@ public class PlayerInteraction : MonoBehaviour
     public LayerMask interactMask;
     public Inventory inventory;
 
+    private PlayerController controller;
+
+    public Inventory PlayerInventory => inventory != null ? inventory : controller != null ? controller.PlayerInventory : null;
+    public UIManager UIManager => controller != null ? controller.UIManager : null;
+
+    void Awake()
+    {
+        controller = GetComponent<PlayerController>();
+    }
+
     public void OnInteract()
     {
         Vector3 dir = projector.transform.forward;
@@ -30,7 +40,7 @@ public class PlayerInteraction : MonoBehaviour
 
         // 🔹 Fallback → grid interaction
         Vector2Int pos = grid.WorldToGrid(preview.transform.position);
-        grid.TryHarvest(pos.x, pos.y, inventory);
+        grid.TryHarvest(pos.x, pos.y, PlayerInventory);
     }
 }
 

@@ -7,15 +7,32 @@ public class SellBox : Container
     public Wallet wallet;
     private bool isActive;
     private int value;
+
+    UIManager ActiveUIManager => PlayerController.LocalPlayer != null ? PlayerController.LocalPlayer.UIManager : null;
+    Wallet ActiveWallet => PlayerController.LocalPlayer != null ? PlayerController.LocalPlayer.PlayerWallet : wallet;
+
     void Awake()
     {
-        isActive = uiManager.containerUI.gameObject.activeSelf;
+        isActive = false;
     }
+
+    bool IsThisSellBoxOpen(UIManager uiManager)
+    {
+        return uiManager != null
+            && uiManager.containerUI != null
+            && uiManager.containerUI.gameObject.activeSelf
+            && uiManager.currentContainerInventory == inventory;
+    }
+
     void Update()
     {
+        UIManager uiManager = ActiveUIManager;
+        if (uiManager == null || uiManager.containerUI == null)
+            return;
+
         if (isActive)
         {
-            isActive = uiManager.containerUI.gameObject.activeSelf;
+            isActive = IsThisSellBoxOpen(uiManager);
             if (!isActive)
             {
                 value = 0;
@@ -23,14 +40,14 @@ public class SellBox : Container
                 {
                     value+= inventory.items[i].value;
                 }
-                wallet.UpdateWallet(value);
+                ActiveWallet?.UpdateWallet(value);
                 value = 0;
                 inventory.items = new List<InventorySlot>();
 
             }
         }
         if (!isActive)
-            isActive = uiManager.containerUI.gameObject.activeSelf;
+            isActive = IsThisSellBoxOpen(uiManager);
 
     }
 }
