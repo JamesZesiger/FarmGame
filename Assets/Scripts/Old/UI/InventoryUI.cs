@@ -43,6 +43,9 @@ public class InventoryUI : MonoBehaviour
 
     public void Awake()
     {
+        if (uiManager == null)
+            uiManager = UIManager.Instance;
+
         this.gameObject.SetActive(isOpen);
     }
 

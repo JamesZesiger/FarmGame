@@ -8,6 +8,9 @@ public class PlayerController : NetworkBehaviour
 {
     public static readonly System.Collections.Generic.List<PlayerController> ActivePlayers = new();
     public static PlayerController LocalPlayer { get; private set; }
+    public static event System.Action<PlayerController> PlayerRegistered;
+    public static event System.Action<PlayerController> PlayerUnregistered;
+    public static event System.Action<PlayerController> InventoryRequested;
 
     [Header("References")]
     public Animator animator;
@@ -16,7 +19,6 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] PlayerCamera playerCamera;
     public FarmInteraction farmInteraction;
     [SerializeField] ToolManager toolManager;
-    [SerializeField] UIManager uiManager;
     [SerializeField] Inventory playerInventory;
     [SerializeField] Wallet playerWallet;
 
@@ -48,9 +50,9 @@ public class PlayerController : NetworkBehaviour
     float nextSpawnTime;
 
     public Inventory PlayerInventory => playerInventory;
-    public UIManager UIManager => uiManager;
     public Wallet PlayerWallet => playerWallet;
     public Camera PlayerCamera => playerCamera != null ? playerCamera.cam : cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
+    public ulong PlayerId => IsSpawned ? OwnerClientId : ulong.MaxValue;
 
     void Awake()
     {
@@ -73,7 +75,10 @@ public class PlayerController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (!ActivePlayers.Contains(this))
+        {
             ActivePlayers.Add(this);
+            PlayerRegistered?.Invoke(this);
+        }
 
         if (playerInput != null)
             playerInput.enabled = IsOwner;
@@ -83,19 +88,11 @@ public class PlayerController : NetworkBehaviour
             enabled = false;
             if (playerCamera != null)
                 playerCamera.enabled = false;
-            if (uiManager != null)
-                uiManager.gameObject.SetActive(false);
             return;
         }
 
         if (playerCamera != null)
             playerCamera.enabled = true;
-
-        if (uiManager != null)
-        {
-            uiManager.gameObject.SetActive(true);
-            uiManager.BindPlayer(this);
-        }
 
         LocalPlayer = this;
 
@@ -108,7 +105,8 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        ActivePlayers.Remove(this);
+        if (ActivePlayers.Remove(this))
+            PlayerUnregistered?.Invoke(this);
 
         if (LocalPlayer == this)
             LocalPlayer = null;
@@ -116,7 +114,8 @@ public class PlayerController : NetworkBehaviour
 
     void OnDestroy()
     {
-        ActivePlayers.Remove(this);
+        if (ActivePlayers.Remove(this))
+            PlayerUnregistered?.Invoke(this);
 
         if (LocalPlayer == this)
             LocalPlayer = null;
@@ -270,7 +269,7 @@ public class PlayerController : NetworkBehaviour
     void OnInventory(InputValue value)
     {
         if (!IsOwner || !value.isPressed) return;
-        uiManager.TogglePlayerInventory();
+        InventoryRequested?.Invoke(this);
     }
 
     void OnAltUseTool(InputValue value)

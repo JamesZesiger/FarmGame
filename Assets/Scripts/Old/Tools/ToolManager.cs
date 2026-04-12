@@ -18,13 +18,24 @@ public class ToolManager : MonoBehaviour
     private Tool currentToolInstance;
     private int currentToolIndex = 0;
 
+    void Awake()
+    {
+        ResolveFarmGrid();
+    }
+
     void Start()
     {
+        ResolveFarmGrid();
         EquipTool(0);
     }
 
     void Update()
     {
+        ResolveFarmGrid();
+
+        if (Mouse.current == null || toolPrefabs.Count == 0)
+            return;
+
         float scroll = Mouse.current.scroll.ReadValue().y;
         if (scroll > 0)
             NextTool();
@@ -34,6 +45,10 @@ public class ToolManager : MonoBehaviour
 
     public void OnUse()
     {
+        Debug.Log("use");
+        if (tilePreviewScript == null)
+            return;
+
         if (tilePreviewScript.isEnabled)
         {
             currentToolInstance?.Use();
@@ -48,6 +63,10 @@ public class ToolManager : MonoBehaviour
 
     void EquipTool(int index)
     {
+        if (toolPrefabs.Count == 0)
+            return;
+
+        ResolveFarmGrid();
         currentToolIndex = index;
 
         if (currentToolInstance != null)
@@ -56,7 +75,7 @@ public class ToolManager : MonoBehaviour
         currentToolInstance = Instantiate(toolPrefabs[index], toolHolder);
         currentToolInstance.Initialize(cam, grid, preview);
 
-        if (currentToolInstance.toolType == ToolType.Hoe || currentToolInstance.toolType == ToolType.Hammer)
+        if (grid != null && (currentToolInstance.toolType == ToolType.Hoe || currentToolInstance.toolType == ToolType.Hammer))
         {
             grid.SetTool(currentToolInstance.toolType);
         }
@@ -90,5 +109,14 @@ public class ToolManager : MonoBehaviour
     public void RemoveTool(int index)
     {
         toolPrefabs.RemoveAt(index);
+    }
+
+    void ResolveFarmGrid()
+    {
+        if (grid == null)
+            grid = FindFirstObjectByType<FarmGrid>();
+
+        if (tilePreviewScript != null && tilePreviewScript.farmGrid == null)
+            tilePreviewScript.farmGrid = grid;
     }
 }

@@ -8,8 +8,10 @@ public class SellBox : Container
     private bool isActive;
     private int value;
 
-    UIManager ActiveUIManager => PlayerController.LocalPlayer != null ? PlayerController.LocalPlayer.UIManager : null;
-    Wallet ActiveWallet => PlayerController.LocalPlayer != null ? PlayerController.LocalPlayer.PlayerWallet : wallet;
+    UIManager ActiveUIManager => UIManager.Instance;
+    Wallet ActiveWallet => ActiveUIManager != null && ActiveUIManager.ResolveCurrentPlayer() != null
+        ? ActiveUIManager.ResolveCurrentPlayer().PlayerWallet
+        : wallet;
 
     void Awake()
     {

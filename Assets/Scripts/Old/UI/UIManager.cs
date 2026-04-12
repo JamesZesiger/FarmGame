@@ -1,11 +1,16 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
+    public static UIManager Instance { get; private set; }
+
     public InventoryUI playerUI;
     public InventoryUI containerUI;
 
+    private readonly Dictionary<ulong, PlayerController> playersById = new();
     private PlayerController currentPlayer;
+    private ulong currentPlayerId = ulong.MaxValue;
     public Inventory currentPlayerInventory;
     public Inventory currentContainerInventory;
 
@@ -13,19 +18,145 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
         if (playerUI != null)
+        {
+            playerUI.uiManager = this;
             playerUI.gameObject.SetActive(false);
+        }
 
         if (containerUI != null)
+        {
+            containerUI.uiManager = this;
             containerUI.gameObject.SetActive(false);
+        }
 
         IsOpen = false;
+        DiscoverPlayersOnLoad();
     }
 
-    public void BindPlayer(PlayerController player)
+    void OnEnable()
     {
+        PlayerController.PlayerRegistered += RegisterPlayer;
+        PlayerController.PlayerUnregistered += UnregisterPlayer;
+        PlayerController.InventoryRequested += HandleInventoryRequested;
+        DiscoverPlayersOnLoad();
+    }
+
+    void OnDisable()
+    {
+        PlayerController.PlayerRegistered -= RegisterPlayer;
+        PlayerController.PlayerUnregistered -= UnregisterPlayer;
+        PlayerController.InventoryRequested -= HandleInventoryRequested;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    public PlayerController ResolveCurrentPlayer()
+    {
+        DiscoverPlayersOnLoad();
+
+        if (currentPlayer != null &&
+            currentPlayerId != ulong.MaxValue &&
+            playersById.TryGetValue(currentPlayerId, out PlayerController trackedCurrent) &&
+            trackedCurrent == currentPlayer)
+            return currentPlayer;
+
+        currentPlayer = null;
+        currentPlayerId = ulong.MaxValue;
+
+        if (PlayerController.LocalPlayer != null)
+        {
+            return SetCurrentPlayer(PlayerController.LocalPlayer);
+        }
+
+        return currentPlayer;
+    }
+
+    public bool TryGetPlayer(ulong playerId, out PlayerController player)
+    {
+        DiscoverPlayersOnLoad();
+        return playersById.TryGetValue(playerId, out player);
+    }
+
+    void DiscoverPlayersOnLoad()
+    {
+        for (int i = 0; i < PlayerController.ActivePlayers.Count; i++)
+        {
+            RegisterPlayer(PlayerController.ActivePlayers[i]);
+        }
+    }
+
+    void RegisterPlayer(PlayerController player)
+    {
+        if (player == null || !player.IsSpawned)
+            return;
+
+        playersById[player.PlayerId] = player;
+
+        if (player.IsOwner || player == PlayerController.LocalPlayer)
+            SetCurrentPlayer(player);
+    }
+
+    void UnregisterPlayer(PlayerController player)
+    {
+        if (player == null)
+            return;
+
+        playersById.Remove(player.PlayerId);
+
+        if (currentPlayer == player)
+        {
+            currentPlayer = null;
+            currentPlayerId = ulong.MaxValue;
+            currentPlayerInventory = null;
+        }
+    }
+
+    PlayerController SetCurrentPlayer(PlayerController player)
+    {
+        if (player == null)
+            return null;
+
         currentPlayer = player;
-        currentPlayerInventory = player != null ? player.PlayerInventory : null;
+        currentPlayerId = player.PlayerId;
+        currentPlayerInventory = player.PlayerInventory;
+        return currentPlayer;
+    }
+
+    void HandleInventoryRequested(PlayerController player)
+    {
+        if (player == null) return;
+        RegisterPlayer(player);
+        if (player != ResolveCurrentPlayer() && player != PlayerController.LocalPlayer) return;
+
+        SetCurrentPlayer(player);
+        TogglePlayerInventory();
+    }
+
+    public void OpenContainerForPlayer(PlayerInteraction playerInteraction, Inventory containerInventory)
+    {
+        if (playerInteraction == null) return;
+
+        PlayerController player = playerInteraction.Controller != null
+            ? playerInteraction.Controller
+            : ResolveCurrentPlayer();
+
+        if (player == null) return;
+
+        SetCurrentPlayer(player);
+        OpenContainer(player.PlayerInventory, containerInventory);
     }
 
     public void TogglePlayerInventory()
@@ -42,10 +173,14 @@ public class UIManager : MonoBehaviour
 
     public void OpenPlayerInventory()
     {
-        Inventory playerInventory = currentPlayer != null ? currentPlayer.PlayerInventory : currentPlayerInventory;
+        PlayerController player = ResolveCurrentPlayer();
+        Inventory playerInventory = player != null ? player.PlayerInventory : currentPlayerInventory;
         if (playerInventory == null) return;
 
-        currentPlayerInventory = playerInventory;
+        if (player != null)
+            SetCurrentPlayer(player);
+        else
+            currentPlayerInventory = playerInventory;
         currentContainerInventory = null;
 
         if (playerUI != null)
@@ -65,8 +200,11 @@ public class UIManager : MonoBehaviour
     {
         if (playerInventory == null || containerInventory == null) return;
 
-        currentPlayer = currentPlayer == null ? PlayerController.LocalPlayer : currentPlayer;
-        currentPlayerInventory = playerInventory;
+        PlayerController player = ResolveCurrentPlayer();
+        if (player != null)
+            SetCurrentPlayer(player);
+        else
+            currentPlayerInventory = playerInventory;
         currentContainerInventory = containerInventory;
 
         if (playerUI != null)

@@ -47,7 +47,7 @@ public class ItemTransferHandler : MonoBehaviour
             ClearSelection();
 
             // Refresh both UIs via UIManager
-            UIManager uiManager = sourceUI.uiManager;
+            UIManager uiManager = sourceUI.uiManager != null ? sourceUI.uiManager : UIManager.Instance;
             if (uiManager != null) uiManager.RefreshAll();
             return;
         }

@@ -14,16 +14,25 @@ public class PlayerInteraction : MonoBehaviour
 
     private PlayerController controller;
 
+    public PlayerController Controller => controller;
     public Inventory PlayerInventory => inventory != null ? inventory : controller != null ? controller.PlayerInventory : null;
-    public UIManager UIManager => controller != null ? controller.UIManager : null;
 
     void Awake()
     {
         controller = GetComponent<PlayerController>();
+        ResolveFarmGrid();
+    }
+
+    void OnEnable()
+    {
+        ResolveFarmGrid();
     }
 
     public void OnInteract()
     {
+        ResolveFarmGrid();
+        if (grid == null || preview == null || projector == null) return;
+
         Vector3 dir = projector.transform.forward;
         dir.Normalize();
 
@@ -41,6 +50,12 @@ public class PlayerInteraction : MonoBehaviour
         // 🔹 Fallback → grid interaction
         Vector2Int pos = grid.WorldToGrid(preview.transform.position);
         grid.TryHarvest(pos.x, pos.y, PlayerInventory);
+    }
+
+    void ResolveFarmGrid()
+    {
+        if (grid == null)
+            grid = FindFirstObjectByType<FarmGrid>();
     }
 }
 

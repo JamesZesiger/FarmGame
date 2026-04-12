@@ -8,14 +8,30 @@ public class FarmInteraction : MonoBehaviour
     public float range = 100f;
     public GameObject preview;
 
+    void Awake()
+    {
+        ResolveFarmGrid();
+    }
+
+    void OnEnable()
+    {
+        ResolveFarmGrid();
+    }
+
     void Update()
     {
-        
+        ResolveFarmGrid();
+    }
+
+    void ResolveFarmGrid()
+    {
+        if (grid == null)
+            grid = FindFirstObjectByType<FarmGrid>();
     }
 
     public void Interact()
     {
-
+        if (grid == null || preview == null) return;
 
         Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
         Tile tile = grid.GetTile(gridPos.x, gridPos.y);
