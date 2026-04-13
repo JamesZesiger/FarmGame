@@ -75,6 +75,10 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        controller.enabled = false; 
+        transform.position += Vector3.up * 2f; 
+        controller.enabled = true;
+        
         if (!ActivePlayers.Contains(this))
         {
             ActivePlayers.Add(this);

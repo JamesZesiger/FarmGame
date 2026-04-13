@@ -17,7 +17,7 @@ public class NetworkUI : MonoBehaviour
 
         if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
         {
-            bool started = NetworkManager.Singleton.StartServer();
+            bool started = NetworkManager.Singleton.StartHost();
             if (!started)
                 return;
 
