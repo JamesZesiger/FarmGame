@@ -10,32 +10,40 @@ public class PlayerCamera : NetworkBehaviour
     [Header("Mouse Look")]
     [SerializeField] float mouseSensitivity = 0.12f;
     [SerializeField] float verticalClamp = 80f;
-    [SerializeField] float smoothSpeed = 5f; // rotation smoothing speed
+    [SerializeField] float smoothSpeed = 5f;
 
     float cameraXRotation;
     public Camera cam;
     Vector2 lookInput;
+    AudioListener audioListener;
 
     public bool lockOveride = false;
     private bool isCameraLocked;
-
-    private Quaternion targetRotation; // smooth rotation target
+    private Quaternion targetRotation;
+    float yaw;
 
     void Awake()
     {
         isCameraLocked = lockOveride;
+
         if (cam == null)
-            cam = GetComponentInChildren<Camera>();
+            cam = GetComponentInChildren<Camera>(true);
+
+        if (audioListener == null)
+            audioListener = GetComponentInChildren<AudioListener>(true);
 
         if (cameraPivot == null)
             cameraPivot = transform;
 
         targetRotation = cameraPivot.localRotation;
+        SetCameraActive(false);
     }
 
     public override void OnNetworkSpawn()
     {
         enabled = IsOwner;
+        SetCameraActive(IsOwner);
+
         if (!IsOwner)
             return;
 
@@ -48,13 +56,16 @@ public class PlayerCamera : NetworkBehaviour
         targetRotation = cameraPivot.localRotation;
     }
 
+    public override void OnNetworkDespawn()
+    {
+        SetCameraActive(false);
+    }
+
     void Update()
     {
         HandleLook();
         SmoothRotate();
     }
-
-    float yaw; // horizontal rotation
 
     void HandleLook()
     {
@@ -63,16 +74,11 @@ public class PlayerCamera : NetworkBehaviour
         float mouseX = lookInput.x * mouseSensitivity;
         float mouseY = lookInput.y * mouseSensitivity;
 
-        // Horizontal rotation (orbit around player)
         yaw += mouseX;
-
-        // Vertical rotation (up/down)
         cameraXRotation -= mouseY;
         cameraXRotation = Mathf.Clamp(cameraXRotation, -verticalClamp, verticalClamp);
-
-        // Apply rotations
         cameraPivot.localRotation = Quaternion.Euler(cameraXRotation, yaw, 0);
-        targetRotation = cameraPivot.localRotation; // update target so smooth rotation doesn't fight mouse
+        targetRotation = cameraPivot.localRotation;
     }
 
     void SmoothRotate()
@@ -109,5 +115,14 @@ public class PlayerCamera : NetworkBehaviour
     {
         if (!IsOwner || !lockOveride) return;
         targetRotation *= Quaternion.Euler(0, -90f, 0);
+    }
+
+    void SetCameraActive(bool isActive)
+    {
+        if (cam != null)
+            cam.enabled = isActive;
+
+        if (audioListener != null)
+            audioListener.enabled = isActive;
     }
 }

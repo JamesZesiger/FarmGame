@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections.Generic;
 using TMPro;
 
 public class InventoryUI : MonoBehaviour
@@ -18,7 +17,6 @@ public class InventoryUI : MonoBehaviour
     {
         currentInventory = inventory;
 
-        // Rebuild slots if needed
         if (slots != null)
         {
             foreach (var s in slots)
@@ -44,7 +42,7 @@ public class InventoryUI : MonoBehaviour
     public void Awake()
     {
         if (uiManager == null)
-            uiManager = UIManager.Instance;
+            uiManager = GetComponentInParent<UIManager>(true);
 
         this.gameObject.SetActive(isOpen);
     }
@@ -87,7 +85,7 @@ public class InventoryUI : MonoBehaviour
 
     public void HandleShiftClick(int index)
     {
-        if (currentInventory == null) return;
+        if (currentInventory == null || uiManager == null) return;
         if (index >= currentInventory.items.Count) return;
 
         InventorySlot slot = currentInventory.items[index];
@@ -105,10 +103,8 @@ public class InventoryUI : MonoBehaviour
 
     public void HandleClick(int index)
     {
-        Debug.Log("click");
         if (currentInventory == null) return;
-        Debug.Log("clicked");
         InventorySlot slot = index < currentInventory.items.Count ? currentInventory.items[index] : null;
-        ItemTransferHandler.Instance.OnSlotClicked(currentInventory, slot, this);
+        uiManager?.TransferHandler?.OnSlotClicked(currentInventory, slot, this);
     }
 }

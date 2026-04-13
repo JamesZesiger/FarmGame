@@ -12,7 +12,7 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
     [Header("Visuals")]
     public Image icon;
     public TextMeshProUGUI quantityText;
-    public Image selectionBorder; // Optional: a border Image to show selection
+    public Image selectionBorder;
 
     public void SetSlot(InventorySlot slot)
     {
@@ -29,15 +29,16 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
             quantityText.text = (hasItem && slot.quantity > 1) ? slot.quantity.ToString() : "";
         }
 
-        // Refresh selection highlight state
         UpdateSelectionVisual(slot);
     }
 
     public void UpdateSelectionVisual(InventorySlot slot)
     {
         if (selectionBorder == null) return;
-        bool selected = slot != null && ItemTransferHandler.Instance != null
-                        && ItemTransferHandler.Instance.IsSelected(slot);
+        ItemTransferHandler transferHandler = parentUI != null && parentUI.uiManager != null
+            ? parentUI.uiManager.TransferHandler
+            : null;
+        bool selected = slot != null && transferHandler != null && transferHandler.IsSelected(slot);
         selectionBorder.enabled = selected;
     }
 

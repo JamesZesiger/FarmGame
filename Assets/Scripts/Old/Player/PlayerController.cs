@@ -8,19 +8,17 @@ public class PlayerController : NetworkBehaviour
 {
     public static readonly System.Collections.Generic.List<PlayerController> ActivePlayers = new();
     public static PlayerController LocalPlayer { get; private set; }
-    public static event System.Action<PlayerController> PlayerRegistered;
-    public static event System.Action<PlayerController> PlayerUnregistered;
-    public static event System.Action<PlayerController> InventoryRequested;
 
     [Header("References")]
     public Animator animator;
-    [SerializeField] Transform model; // visual mesh
+    [SerializeField] Transform model;
     [SerializeField] Transform cameraTransform;
     [SerializeField] PlayerCamera playerCamera;
     public FarmInteraction farmInteraction;
     [SerializeField] ToolManager toolManager;
     [SerializeField] Inventory playerInventory;
     [SerializeField] Wallet playerWallet;
+    [SerializeField] UIManager uiManager;
 
     [Header("Movement")]
     [SerializeField] float walkSpeed = 6f;
@@ -48,49 +46,86 @@ public class PlayerController : NetworkBehaviour
     bool isGrounded;
 
     float nextSpawnTime;
+    float syncedSpeed;
+    bool syncedIsGrounded;
+    float syncedVerticalVelocity;
+    int lastJumpSerial;
+
+    readonly NetworkVariable<float> networkSpeed = new(
+        0f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+    readonly NetworkVariable<bool> networkIsGrounded = new(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+    readonly NetworkVariable<float> networkVerticalVelocity = new(
+        0f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+    readonly NetworkVariable<Quaternion> networkModelRotation = new(
+        Quaternion.identity,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
+    readonly NetworkVariable<int> networkJumpSerial = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Owner
+    );
 
     public Inventory PlayerInventory => playerInventory;
     public Wallet PlayerWallet => playerWallet;
     public Camera PlayerCamera => playerCamera != null ? playerCamera.cam : cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
     public ulong PlayerId => IsSpawned ? OwnerClientId : ulong.MaxValue;
+    public UIManager UIManager => uiManager;
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
         playerInput = GetComponent<PlayerInput>();
 
-        if (cameraTransform == null && Camera.main != null)
-            cameraTransform = Camera.main.transform;
-
         if (farmInteraction == null)
             farmInteraction = GetComponent<FarmInteraction>();
 
         if (playerCamera == null)
-            playerCamera = GetComponentInChildren<PlayerCamera>();
+            playerCamera = GetComponentInChildren<PlayerCamera>(true);
+
+        if (uiManager == null)
+            uiManager = GetComponentInChildren<UIManager>(true);
+
+        if (cameraTransform == null && playerCamera != null && playerCamera.cam != null)
+            cameraTransform = playerCamera.cam.transform;
 
         if (playerCamera != null)
             playerCamera.enabled = false;
-
     }
 
     public override void OnNetworkSpawn()
     {
-        controller.enabled = false; 
-        transform.position += Vector3.up * 2f; 
+        controller.enabled = false;
+        transform.position += Vector3.up * 2f;
         controller.enabled = true;
-        
+
         if (!ActivePlayers.Contains(this))
-        {
             ActivePlayers.Add(this);
-            PlayerRegistered?.Invoke(this);
-        }
+
+        if (uiManager != null)
+            uiManager.Initialize(this);
 
         if (playerInput != null)
             playerInput.enabled = IsOwner;
 
+        syncedSpeed = networkSpeed.Value;
+        syncedIsGrounded = networkIsGrounded.Value;
+        syncedVerticalVelocity = networkVerticalVelocity.Value;
+        lastJumpSerial = networkJumpSerial.Value;
+
         if (!IsOwner)
         {
-            enabled = false;
             if (playerCamera != null)
                 playerCamera.enabled = false;
             return;
@@ -99,15 +134,10 @@ public class PlayerController : NetworkBehaviour
         if (playerCamera != null)
             playerCamera.enabled = true;
 
-        if (IsOwner)
-        {
-            LocalPlayer = this;
+        LocalPlayer = this;
 
-            Debug.Log($"LocalPlayer set. Camera = {PlayerCamera}");
-        }
-
-        if (cameraTransform == null && Camera.main != null)
-            cameraTransform = Camera.main.transform;
+        if (cameraTransform == null && playerCamera != null && playerCamera.cam != null)
+            cameraTransform = playerCamera.cam.transform;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -115,8 +145,7 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        if (ActivePlayers.Remove(this))
-            PlayerUnregistered?.Invoke(this);
+        ActivePlayers.Remove(this);
 
         if (LocalPlayer == this)
             LocalPlayer = null;
@@ -124,8 +153,7 @@ public class PlayerController : NetworkBehaviour
 
     void OnDestroy()
     {
-        if (ActivePlayers.Remove(this))
-            PlayerUnregistered?.Invoke(this);
+        ActivePlayers.Remove(this);
 
         if (LocalPlayer == this)
             LocalPlayer = null;
@@ -133,19 +161,25 @@ public class PlayerController : NetworkBehaviour
 
     void Update()
     {
-        if (!IsOwner) return;
-        GroundCheck();
-        HandleMovement();
-        ApplyGravity();
-        HandleAnimations();
-        HandleFootsteps();
-    }
+        if (IsOwner)
+        {
+            GroundCheck();
+            HandleMovement();
+            ApplyGravity();
+            SyncAnimationState();
+            ApplyAnimationState(velocity.magnitude / sprintSpeed, isGrounded, verticalVelocity);
+            HandleFootsteps();
+            return;
+        }
 
-    // ---------------- MOVEMENT ----------------
+        ApplyRemoteAnimationState();
+    }
 
     void HandleMovement()
     {
-        // Camera-relative movement
+        if (cameraTransform == null)
+            return;
+
         Vector3 camForward = cameraTransform.forward;
         Vector3 camRight = cameraTransform.right;
 
@@ -156,9 +190,7 @@ public class PlayerController : NetworkBehaviour
         camRight.Normalize();
 
         Vector3 moveDir = camForward * moveInput.y + camRight * moveInput.x;
-
         float speed = isSprinting ? sprintSpeed : walkSpeed;
-
         Vector3 targetVelocity = moveDir * speed;
 
         velocity = Vector3.Lerp(
@@ -169,7 +201,6 @@ public class PlayerController : NetworkBehaviour
 
         controller.Move(velocity * Time.deltaTime);
 
-        // Smooth model rotation
         if (moveDir.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);
@@ -181,8 +212,6 @@ public class PlayerController : NetworkBehaviour
             );
         }
     }
-
-    // ---------------- GRAVITY ----------------
 
     void ApplyGravity()
     {
@@ -197,33 +226,52 @@ public class PlayerController : NetworkBehaviour
         isGrounded = controller.isGrounded;
 
         if (isGrounded && verticalVelocity < 0)
-        {
             verticalVelocity = -2f;
-        }
     }
-
-    // ---------------- JUMP ----------------
 
     void Jump()
     {
         if (!isGrounded) return;
 
         verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        networkJumpSerial.Value++;
         animator.SetTrigger("jump");
     }
 
-    // ---------------- ANIMATIONS ----------------
-
-    void HandleAnimations()
+    void SyncAnimationState()
     {
-        float speedPercent = velocity.magnitude / sprintSpeed;
-
-        animator.SetFloat("speed", speedPercent, 0.1f, Time.deltaTime);
-        animator.SetBool("isGrounded", isGrounded);
-        animator.SetFloat("yVelocity", verticalVelocity);
+        networkSpeed.Value = velocity.magnitude / sprintSpeed;
+        networkIsGrounded.Value = isGrounded;
+        networkVerticalVelocity.Value = verticalVelocity;
+        if (model != null)
+            networkModelRotation.Value = model.rotation;
     }
 
-    // ---------------- FOOTSTEPS ----------------
+    void ApplyAnimationState(float speedPercent, bool grounded, float yVelocity)
+    {
+        animator.SetFloat("speed", speedPercent, 0.1f, Time.deltaTime);
+        animator.SetBool("isGrounded", grounded);
+        animator.SetFloat("yVelocity", yVelocity);
+    }
+
+    void ApplyRemoteAnimationState()
+    {
+        syncedSpeed = networkSpeed.Value;
+        syncedIsGrounded = networkIsGrounded.Value;
+        syncedVerticalVelocity = networkVerticalVelocity.Value;
+
+        if (model != null)
+            model.rotation = networkModelRotation.Value;
+
+        ApplyAnimationState(syncedSpeed, syncedIsGrounded, syncedVerticalVelocity);
+
+        int jumpSerial = networkJumpSerial.Value;
+        if (jumpSerial != lastJumpSerial)
+        {
+            lastJumpSerial = jumpSerial;
+            animator.SetTrigger("jump");
+        }
+    }
 
     void HandleFootsteps()
     {
@@ -242,8 +290,6 @@ public class PlayerController : NetworkBehaviour
             }
         }
     }
-
-    // ---------------- INPUT ----------------
 
     void OnMove(InputValue value)
     {
@@ -279,7 +325,7 @@ public class PlayerController : NetworkBehaviour
     void OnInventory(InputValue value)
     {
         if (!IsOwner || !value.isPressed) return;
-        InventoryRequested?.Invoke(this);
+        uiManager?.TogglePlayerInventory();
     }
 
     void OnAltUseTool(InputValue value)

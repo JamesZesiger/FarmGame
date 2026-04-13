@@ -1,12 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.InputSystem; // ADD THIS
+using UnityEngine.InputSystem;
 
 public class CursorItemPreview : MonoBehaviour
 {
-    public static CursorItemPreview Instance { get; private set; }
-
-    [Header("References")]
     public Image previewIcon;
 
     private RectTransform _rect;
@@ -14,35 +11,40 @@ public class CursorItemPreview : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-
         _rect = GetComponent<RectTransform>();
         _canvas = GetComponentInParent<Canvas>();
-
         Hide();
     }
 
     void Update()
     {
-        if (previewIcon.enabled)
+        if (previewIcon != null && previewIcon.enabled)
             FollowMouse();
     }
 
     public void Show(Sprite sprite)
     {
+        if (previewIcon == null)
+            return;
+
         previewIcon.sprite = sprite;
         previewIcon.enabled = true;
     }
 
     public void Hide()
     {
+        if (previewIcon == null)
+            return;
+
         previewIcon.enabled = false;
     }
 
     private void FollowMouse()
     {
-        Vector2 mousePos = Mouse.current.position.ReadValue(); // FIXED
+        if (Mouse.current == null || _canvas == null)
+            return;
+
+        Vector2 mousePos = Mouse.current.position.ReadValue();
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             _canvas.transform as RectTransform,

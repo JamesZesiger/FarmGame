@@ -95,9 +95,6 @@ public class TilePreview : MonoBehaviour
         if (mainCamera == null && PlayerController.LocalPlayer != null)
             mainCamera = PlayerController.LocalPlayer.PlayerCamera;
 
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
         if (cam == null && mainCamera != null)
             cam = mainCamera.gameObject;
     }

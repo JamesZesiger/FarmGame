@@ -6,6 +6,6 @@ public class Container : MonoBehaviour, IInteractable
 
     public void Interact(PlayerInteraction player)
     {
-        UIManager.Instance?.OpenContainerForPlayer(player, inventory);
+        player?.Controller?.UIManager?.OpenContainerForPlayer(player, inventory);
     }
 }
