@@ -701,6 +701,25 @@ public class FarmGrid : MonoBehaviour
         return states;
     }
 
+    public FarmTileState[] CaptureActiveTileStates()
+    {
+        List<FarmTileState> states = new();
+
+        for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y++)
+        {
+            Tile tile = tiles[x, y];
+            if (tile == null || tile.type == TileType.Empty)
+            {
+                continue;
+            }
+
+            states.Add(CaptureTileState(x, y));
+        }
+
+        return states.ToArray();
+    }
+
     public void ApplyTileState(FarmTileState state)
     {
         if (!InBounds(state.x, state.y)) return;
@@ -746,6 +765,8 @@ public class FarmGrid : MonoBehaviour
     public void ApplyFullState(FarmTileState[] states)
     {
         if (states == null) return;
+
+        ClearAllTileStates();
 
         for (int i = 0; i < states.Length; i++)
         {
@@ -847,6 +868,18 @@ public class FarmGrid : MonoBehaviour
         tile.structureIndex = null;
         tile.isWatered = false;
         tile.waterTimer = 0f;
+    }
+
+    void ClearAllTileStates()
+    {
+        for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y++)
+        {
+            ClearTileState(tiles[x, y]);
+        }
+
+        activeCropTiles.Clear();
+        wateredTiles.Clear();
     }
 
     void UpdateTrackedCollections(int x, int y, Tile tile)

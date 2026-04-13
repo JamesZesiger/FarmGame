@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Inventory : MonoBehaviour
@@ -45,6 +46,32 @@ public class Inventory : MonoBehaviour
         return remaining; // leftover if inventory is full
     
     
+    }
+
+    public Item GetItemByName(string itemName)
+    {
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            return null;
+        }
+
+        InventorySlot slot = items.FirstOrDefault(slot => slot != null && slot.item != null && slot.item.itemName == itemName);
+        if (slot != null)
+        {
+            return slot.item;
+        }
+
+        CropData[] crops = Resources.LoadAll<CropData>("CropData");
+        for (int i = 0; i < crops.Length; i++)
+        {
+            CropData crop = crops[i];
+            if (crop != null && crop.item != null && crop.item.itemName == itemName)
+            {
+                return crop.item;
+            }
+        }
+
+        return null;
     }
 
     public int TransferTo(Inventory target, InventorySlot slot)

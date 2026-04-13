@@ -50,7 +50,7 @@ public class FarmGridNetwork : NetworkBehaviour
         ulong senderId = rpcParams.Receive.SenderClientId;
 
         ApplyFullStateClientRpc(
-            grid.CaptureAllTileStates(),
+            grid.CaptureActiveTileStates(),
             new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -111,7 +111,26 @@ public class FarmGridNetwork : NetworkBehaviour
         Inventory inventory = ResolveInventory(senderId);
         if (inventory == null) return;
 
-        grid.TryHarvest(x, y, inventory);
+        Tile tile = grid.GetTile(x, y);
+        CropInstance crop = tile != null ? tile.crop : null;
+        Item harvestedItem = crop != null && crop.data != null ? crop.data.item : null;
+
+        if (!grid.TryHarvest(x, y, inventory)) return;
+
+        if (harvestedItem != null)
+        {
+            SyncHarvestedItemClientRpc(
+                harvestedItem.itemName,
+                1,
+                new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = new[] { senderId }
+                    }
+                }
+            );
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -153,6 +172,27 @@ public class FarmGridNetwork : NetworkBehaviour
         if (grid == null) return;
 
         grid.ApplyFullState(states);
+    }
+
+    [ClientRpc]
+    void SyncHarvestedItemClientRpc(string itemName, int amount, ClientRpcParams clientRpcParams = default)
+    {
+        if (IsServer) return;
+        if (string.IsNullOrWhiteSpace(itemName) || amount <= 0) return;
+
+        Inventory inventory = ResolveInventory(NetworkManager.LocalClientId);
+        if (inventory == null) return;
+
+        Item item = inventory.GetItemByName(itemName);
+        if (item == null) return;
+
+        inventory.AddItem(item, amount);
+
+        PlayerController player = PlayerController.LocalPlayer;
+        if (player != null)
+        {
+            player.UIManager?.RefreshAll();
+        }
     }
 
     void ResolveGrid()

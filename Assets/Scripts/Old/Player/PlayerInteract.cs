@@ -47,6 +47,7 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         Vector2Int pos = grid.WorldToGrid(preview.transform.position);
+        Debug.Log("player harvesting");
         gridNetwork.HarvestServerRpc(pos.x, pos.y);
     }
 
