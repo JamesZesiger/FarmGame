@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Unity.Netcode;
 
 public enum Difficulty
 {
@@ -45,13 +46,22 @@ public class SettingsManager : MonoBehaviour
         else
         {
             if (gameState != GameState.Win)
-                SceneManager.LoadScene(3); // load credits
-                gameState = GameState.Lose;
+                if (SceneManager.GetActiveScene().name != "Credits")
+                {
+                    gameState = GameState.Lose;
+                    NetworkManager.Singleton.SceneManager.LoadScene("Credits", LoadSceneMode.Single);
+                    Destroy(this);
+                }
+                
         }
         if (gameState == GameState.Win)
         {
-            SceneManager.LoadScene(3);
-            Destroy(this);
+           if (SceneManager.GetActiveScene().name != "Credits")
+            {
+                NetworkManager.Singleton.SceneManager.LoadScene("Credits", LoadSceneMode.Single);
+                Destroy(this);
+            }
+            
         }
     }
     

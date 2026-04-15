@@ -4,14 +4,25 @@ using UnityEngine.SceneManagement;
 
 public class NetworkUI : MonoBehaviour
 {
-    const string gameplaySceneName = "Grass";
-
+    private int _sceneIndex = 0;
+    private string _sceneName;
     public GameObject NetworkPanel;
     public Menu menu;
 
-
+    void Awake()
+    {
+        GetNextScene();
+    }
+    void GetNextScene()
+    {
+        _sceneIndex = SettingsManager.Instance.GetDifficultyAsInt()+1;
+        string scenePath = SceneUtility.GetScenePathByBuildIndex(_sceneIndex);
+         _sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+    }
     public void OnHostButton()
     {
+        GetNextScene();
+
         if (NetworkManager.Singleton == null)
             return;
 
@@ -21,9 +32,11 @@ public class NetworkUI : MonoBehaviour
             if (!started)
                 return;
 
-            if (SceneManager.GetActiveScene().name != gameplaySceneName)
+            if (SceneManager.GetActiveScene().name != _sceneName)
             {
-                NetworkManager.Singleton.SceneManager.LoadScene(gameplaySceneName, LoadSceneMode.Single);
+                Debug.Log($"{_sceneName}");
+                NetworkManager.Singleton.SceneManager.LoadScene(_sceneName, LoadSceneMode.Single);
+                SettingsManager.Instance.timerStarted = true;
             }
         }
     }

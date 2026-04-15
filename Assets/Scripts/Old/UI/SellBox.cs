@@ -18,7 +18,7 @@ public class SellBox : Container
         isActive = false;
     }
 
-    bool IsThisSellBoxOpen(UIManager uiManager)
+    bool IsOpen(UIManager uiManager)
     {
         return uiManager != null
             && uiManager.containerUI != null
@@ -34,7 +34,7 @@ public class SellBox : Container
 
         if (isActive)
         {
-            isActive = IsThisSellBoxOpen(uiManager);
+            isActive = IsOpen(uiManager);
             if (!isActive)
             {
                 value = 0;
@@ -49,7 +49,7 @@ public class SellBox : Container
             }
         }
         if (!isActive)
-            isActive = IsThisSellBoxOpen(uiManager);
+            isActive = IsOpen(uiManager);
 
     }
 }
