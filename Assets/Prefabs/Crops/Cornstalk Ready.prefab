@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1104740208680825025, guid: d907130f648af82458814a774f827066, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 4085143684
+      objectReference: {fileID: 0}
     - target: {fileID: 1524010281241650038, guid: d907130f648af82458814a774f827066, type: 3}
       propertyPath: m_Name
       value: Cornstalk Ready
