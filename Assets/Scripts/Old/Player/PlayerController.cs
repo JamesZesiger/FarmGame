@@ -1,12 +1,13 @@
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerController : NetworkBehaviour
 {
-    public static readonly System.Collections.Generic.List<PlayerController> ActivePlayers = new();
+    public static readonly List<PlayerController> ActivePlayers = new();
     public static PlayerController LocalPlayer { get; private set; }
 
     [Header("References")]
@@ -51,31 +52,13 @@ public class PlayerController : NetworkBehaviour
     float syncedVerticalVelocity;
     int lastJumpSerial;
 
-    readonly NetworkVariable<float> networkSpeed = new(
-        0f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner
-    );
-    readonly NetworkVariable<bool> networkIsGrounded = new(
-        false,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner
-    );
-    readonly NetworkVariable<float> networkVerticalVelocity = new(
-        0f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner
-    );
-    readonly NetworkVariable<Quaternion> networkModelRotation = new(
-        Quaternion.identity,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner
-    );
-    readonly NetworkVariable<int> networkJumpSerial = new(
-        0,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner
-    );
+    bool isSceneReady;
+
+    readonly NetworkVariable<float> networkSpeed = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    readonly NetworkVariable<bool> networkIsGrounded = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    readonly NetworkVariable<float> networkVerticalVelocity = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    readonly NetworkVariable<Quaternion> networkModelRotation = new(Quaternion.identity, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    readonly NetworkVariable<int> networkJumpSerial = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public Inventory PlayerInventory => playerInventory;
     public Wallet PlayerWallet => playerWallet;
@@ -86,6 +69,7 @@ public class PlayerController : NetworkBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        controller.enabled = false;
         playerInput = GetComponent<PlayerInput>();
 
         if (farmInteraction == null)
@@ -107,8 +91,9 @@ public class PlayerController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         controller.enabled = false;
-        transform.position += Vector3.up * 2f;
-        controller.enabled = true;
+
+        if (NetworkManager.Singleton.SceneManager != null)
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += OnSceneLoaded;
 
         if (!ActivePlayers.Contains(this))
             ActivePlayers.Add(this);
@@ -143,6 +128,15 @@ public class PlayerController : NetworkBehaviour
         Cursor.visible = false;
     }
 
+    void OnSceneLoaded(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (!IsOwner) return;
+
+        isSceneReady = true;
+        controller.enabled = true;
+        verticalVelocity = -2f;
+    }
+
     public override void OnNetworkDespawn()
     {
         ActivePlayers.Remove(this);
@@ -157,10 +151,15 @@ public class PlayerController : NetworkBehaviour
 
         if (LocalPlayer == this)
             LocalPlayer = null;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= OnSceneLoaded;
     }
 
     void Update()
     {
+        if (!isSceneReady) return;
+
         if (IsOwner)
         {
             GroundCheck();
@@ -193,11 +192,7 @@ public class PlayerController : NetworkBehaviour
         float speed = isSprinting ? sprintSpeed : walkSpeed;
         Vector3 targetVelocity = moveDir * speed;
 
-        velocity = Vector3.Lerp(
-            velocity,
-            targetVelocity,
-            acceleration * Time.deltaTime
-        );
+        velocity = Vector3.Lerp(velocity, targetVelocity, acceleration * Time.deltaTime);
 
         controller.Move(velocity * Time.deltaTime);
 
@@ -205,18 +200,13 @@ public class PlayerController : NetworkBehaviour
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);
 
-            model.rotation = Quaternion.Slerp(
-                model.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
+            model.rotation = Quaternion.Slerp(model.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
     }
 
     void ApplyGravity()
     {
         verticalVelocity += gravity * Time.deltaTime;
-
         Vector3 gravityMove = Vector3.up * verticalVelocity;
         controller.Move(gravityMove * Time.deltaTime);
     }
@@ -279,12 +269,7 @@ public class PlayerController : NetworkBehaviour
         {
             if (Time.time >= nextSpawnTime)
             {
-                GameObject particle = Instantiate(
-                    footstepParticlePrefab,
-                    footPoint.position,
-                    Quaternion.identity
-                );
-
+                GameObject particle = Instantiate(footstepParticlePrefab, footPoint.position, Quaternion.identity);
                 Destroy(particle, 0.5f);
                 nextSpawnTime = Time.time + spawnRate;
             }
