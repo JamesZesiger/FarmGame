@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 public class FarmGrid : MonoBehaviour
@@ -785,12 +786,20 @@ public class FarmGrid : MonoBehaviour
         {
             GameObject obj = q.Dequeue();
             obj.SetActive(true);
-            obj.transform.SetPositionAndRotation(position, rotation);
-            obj.transform.parent = parent;
+            PreparePooledObject(obj, position, rotation, parent);
             return obj;
         }
 
-        return Instantiate(prefab, position, rotation, parent);
+        GameObject instance = HasNetworkObject(prefab)
+            ? Instantiate(prefab, position, rotation)
+            : Instantiate(prefab, position, rotation, parent);
+
+        if (HasNetworkObject(instance))
+        {
+            PreparePooledObject(instance, position, rotation, parent);
+        }
+
+        return instance;
     }
 
     GameObject GetFromPool(GameObject prefab)
@@ -799,6 +808,10 @@ public class FarmGrid : MonoBehaviour
         {
             GameObject obj = q.Dequeue();
             obj.SetActive(true);
+            if (HasNetworkObject(obj))
+            {
+                obj.transform.SetParent(null, false);
+            }
             return obj;
         }
 
@@ -808,6 +821,11 @@ public class FarmGrid : MonoBehaviour
     void ReturnToPoolPrefab(GameObject obj, GameObject prefab)
     {
         if (obj == null || prefab == null) return;
+
+        if (HasNetworkObject(obj))
+        {
+            obj.transform.SetParent(null, false);
+        }
 
         obj.SetActive(false);
 
@@ -829,9 +847,34 @@ public class FarmGrid : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             GameObject obj = Instantiate(prefab);
+            if (HasNetworkObject(obj))
+            {
+                obj.transform.SetParent(null, false);
+            }
             obj.SetActive(false);
             pool[prefab].Enqueue(obj);
         }
+    }
+
+    void PreparePooledObject(GameObject obj, Vector3 position, Quaternion rotation, Transform parent)
+    {
+        if (obj == null)
+            return;
+
+        if (HasNetworkObject(obj))
+        {
+            obj.transform.SetParent(null, false);
+            obj.transform.SetPositionAndRotation(position, rotation);
+            return;
+        }
+
+        obj.transform.SetParent(parent, false);
+        obj.transform.SetPositionAndRotation(position, rotation);
+    }
+
+    bool HasNetworkObject(GameObject obj)
+    {
+        return obj != null && obj.GetComponent<NetworkObject>() != null;
     }
 
     void ClearTileState(Tile tile)
