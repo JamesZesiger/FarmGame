@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInput))]
@@ -96,6 +97,8 @@ public class PlayerController : NetworkBehaviour
         if (NetworkManager.Singleton.SceneManager != null)
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += OnSceneLoaded;
 
+        SceneManager.sceneLoaded += OnUnitySceneLoaded;
+
         if (!ActivePlayers.Contains(this))
             ActivePlayers.Add(this);
 
@@ -109,6 +112,8 @@ public class PlayerController : NetworkBehaviour
         syncedIsGrounded = networkIsGrounded.Value;
         syncedVerticalVelocity = networkVerticalVelocity.Value;
         lastJumpSerial = networkJumpSerial.Value;
+
+        TryMarkSceneReady(SceneManager.GetActiveScene());
 
         if (!IsOwner)
         {
@@ -129,18 +134,22 @@ public class PlayerController : NetworkBehaviour
         Cursor.visible = false;
     }
 
-    void OnSceneLoaded(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    void OnSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        if (!IsOwner) return;
+        if (clientsCompleted == null || !clientsCompleted.Contains(OwnerClientId))
+            return;
 
-        isSceneReady = true;
-        controller.enabled = true;
-        verticalVelocity = -2f;
+        TryMarkSceneReady(SceneManager.GetSceneByName(sceneName));
     }
 
     public override void OnNetworkDespawn()
     {
         ActivePlayers.Remove(this);
+
+        SceneManager.sceneLoaded -= OnUnitySceneLoaded;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= OnSceneLoaded;
 
         if (LocalPlayer == this)
             LocalPlayer = null;
@@ -152,6 +161,8 @@ public class PlayerController : NetworkBehaviour
 
         if (LocalPlayer == this)
             LocalPlayer = null;
+
+        SceneManager.sceneLoaded -= OnUnitySceneLoaded;
 
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= OnSceneLoaded;
@@ -396,6 +407,28 @@ public class PlayerController : NetworkBehaviour
         if (_farmGridNetwork == null)
         {
             _farmGridNetwork = FarmGridNetwork.ResolveActive();
+        }
+    }
+
+    void OnUnitySceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        TryMarkSceneReady(scene);
+    }
+
+    void TryMarkSceneReady(Scene scene)
+    {
+        if (!scene.IsValid() || scene != gameObject.scene)
+            return;
+
+        if (scene.name == "Menu")
+            return;
+
+        isSceneReady = true;
+
+        if (IsOwner)
+        {
+            controller.enabled = true;
+            verticalVelocity = -2f;
         }
     }
 }
