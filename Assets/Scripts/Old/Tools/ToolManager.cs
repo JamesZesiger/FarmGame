@@ -17,9 +17,11 @@ public class ToolManager : MonoBehaviour
 
     private Tool currentToolInstance;
     private int currentToolIndex = 0;
+    private PlayerController _ownerPlayer;
 
     void Awake()
     {
+        _ownerPlayer = GetComponentInParent<PlayerController>();
         ResolveFarmGrid();
     }
 
@@ -31,6 +33,9 @@ public class ToolManager : MonoBehaviour
 
     void Update()
     {
+        if (!IsOwnerToolManager())
+            return;
+
         ResolveFarmGrid();
 
         if (Mouse.current == null || toolPrefabs.Count == 0)
@@ -45,6 +50,9 @@ public class ToolManager : MonoBehaviour
 
     public void OnUse()
     {
+        if (!IsOwnerToolManager())
+            return;
+
         Debug.Log("use");
         if (tilePreviewScript == null)
             return;
@@ -84,7 +92,8 @@ public class ToolManager : MonoBehaviour
     public void NextTool()
     {
         int nextIndex = (currentToolIndex + 1) % toolPrefabs.Count;
-        selectionUI.setIcon(toolPrefabs[nextIndex].sprite);
+        if (selectionUI != null)
+            selectionUI.setIcon(toolPrefabs[nextIndex].sprite);
         EquipTool(nextIndex);
     }
 
@@ -92,12 +101,16 @@ public class ToolManager : MonoBehaviour
     {
         int prevIndex = currentToolIndex - 1;
         if (prevIndex < 0) prevIndex = toolPrefabs.Count - 1;
-        selectionUI.setIcon(toolPrefabs[prevIndex].sprite);
+        if (selectionUI != null)
+            selectionUI.setIcon(toolPrefabs[prevIndex].sprite);
         EquipTool(prevIndex);
     }
 
     public void AltUse()
     {
+        if (!IsOwnerToolManager())
+            return;
+
         currentToolInstance?.TryAlt();
     }
 
@@ -118,5 +131,13 @@ public class ToolManager : MonoBehaviour
 
         if (tilePreviewScript != null && tilePreviewScript.farmGrid == null)
             tilePreviewScript.farmGrid = grid;
+    }
+
+    bool IsOwnerToolManager()
+    {
+        if (_ownerPlayer == null)
+            _ownerPlayer = GetComponentInParent<PlayerController>();
+
+        return _ownerPlayer != null && _ownerPlayer.IsOwner;
     }
 }
