@@ -10,10 +10,10 @@ public class GridInteractable : MonoBehaviour, IInteractable
         if (player == null || player.preview == null) return;
 
         ResolveGrid();
-        if (grid == null || gridNetwork == null) return;
+        if (grid == null || player.Controller == null) return;
 
         Vector2Int pos = grid.WorldToGrid(player.preview.transform.position);
-        gridNetwork.HarvestServerRpc(pos.x, pos.y);
+        player.Controller.RequestHarvestServerRpc(pos.x, pos.y);
     }
 
     void ResolveGrid()

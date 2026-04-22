@@ -5,6 +5,7 @@ public class ShovelTool : Tool
     private FarmGrid grid;
     private GameObject preview;
     private FarmGridNetwork _gridNetwork;
+    private PlayerController _playerController;
     public override void Initialize(Camera cam, FarmGrid grid, GameObject preview)
     {
         this.grid = grid;
@@ -15,7 +16,8 @@ public class ShovelTool : Tool
 
     public override void Use()
     {
-        if (grid == null || preview == null || _gridNetwork == null)
+        ResolvePlayerController();
+        if (grid == null || preview == null || _playerController == null)
         {
             return;
         }
@@ -25,7 +27,7 @@ public class ShovelTool : Tool
 
         if (tile != null && tile.type != TileType.Building)
         {
-            _gridNetwork.UntillServerRpc(gridPos.x, gridPos.y);
+            _playerController.RequestUntillServerRpc(gridPos.x, gridPos.y);
         }
     }
 
@@ -36,6 +38,14 @@ public class ShovelTool : Tool
         if (_gridNetwork == null)
         {
             _gridNetwork = FindFirstObjectByType<FarmGridNetwork>();
+        }
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponentInParent<PlayerController>();
         }
     }
 }

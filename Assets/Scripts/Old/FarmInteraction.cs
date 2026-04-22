@@ -8,6 +8,7 @@ public class FarmInteraction : MonoBehaviour
     public LayerMask terrainMask;
     public float range = 100f;
     public GameObject preview;
+    PlayerController _playerController;
 
     void Awake()
     {
@@ -39,9 +40,18 @@ public class FarmInteraction : MonoBehaviour
 
     public void Interact()
     {
-        if (grid == null || gridNetwork == null || preview == null) return;
+        ResolvePlayerController();
+        if (grid == null || preview == null || _playerController == null) return;
 
         Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-        gridNetwork.TillServerRpc(gridPos.x, gridPos.y);
+        _playerController.RequestTillServerRpc(gridPos.x, gridPos.y);
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponent<PlayerController>();
+        }
     }
 }

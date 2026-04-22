@@ -53,6 +53,7 @@ public class PlayerController : NetworkBehaviour
     int lastJumpSerial;
 
     bool isSceneReady;
+    FarmGridNetwork _farmGridNetwork;
 
     readonly NetworkVariable<float> networkSpeed = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     readonly NetworkVariable<bool> networkIsGrounded = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -301,6 +302,61 @@ public class PlayerController : NetworkBehaviour
         toolManager.OnUse();
     }
 
+    [ServerRpc]
+    public void RequestTillServerRpc(int x, int y)
+    {
+        ResolveFarmGridNetwork();
+        _farmGridNetwork?.TillOnServer(x, y);
+    }
+
+    [ServerRpc]
+    public void RequestUntillServerRpc(int x, int y)
+    {
+        ResolveFarmGridNetwork();
+        _farmGridNetwork?.UntillOnServer(x, y);
+    }
+
+    [ServerRpc]
+    public void RequestWaterServerRpc(int x, int y)
+    {
+        ResolveFarmGridNetwork();
+        _farmGridNetwork?.WaterOnServer(x, y);
+    }
+
+    [ServerRpc]
+    public void RequestPlantServerRpc(int x, int y, string cropName)
+    {
+        ResolveFarmGridNetwork();
+        _farmGridNetwork?.PlantOnServer(x, y, cropName);
+    }
+
+    [ServerRpc]
+    public void RequestHammerActionServerRpc(int x, int y, int structureIndex, bool removeStructure)
+    {
+        ResolveFarmGridNetwork();
+        if (_farmGridNetwork == null) return;
+
+        if (removeStructure)
+        {
+            _farmGridNetwork.RemoveStructureOnServer(x, y);
+            return;
+        }
+
+        _farmGridNetwork.PlaceStructureOnServer(x, y, structureIndex);
+    }
+
+    [ServerRpc]
+    public void RequestHarvestServerRpc(int x, int y, ServerRpcParams rpcParams = default)
+    {
+        Debug.Log("harvest:1");
+        ResolveFarmGridNetwork();
+        Debug.Log("harvest:2");
+        if (_farmGridNetwork == null) return;
+        Debug.Log("harvest:3");
+        _farmGridNetwork.HarvestOnServer(x, y, playerInventory, OwnerClientId);
+    }
+
+
     void OnNext(InputValue value)
     {
         if (!IsOwner || !value.isPressed) return;
@@ -332,6 +388,14 @@ public class PlayerController : NetworkBehaviour
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+    }
+
+    void ResolveFarmGridNetwork()
+    {
+        if (_farmGridNetwork == null)
+        {
+            _farmGridNetwork = FarmGridNetwork.ResolveActive();
         }
     }
 }

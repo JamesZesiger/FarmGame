@@ -8,6 +8,7 @@ public class HoeTool : Tool
     public LayerMask terrainMask;
     public float range = 100f;
     public GameObject preview;
+    PlayerController _playerController;
 
     public override void Initialize(Camera cam, FarmGrid grid, GameObject preview)
     {
@@ -18,11 +19,12 @@ public class HoeTool : Tool
     }
     public override void Use()
     {
-        if (grid == null || preview == null || gridNetwork == null) return;
+        ResolvePlayerController();
+        if (grid == null || preview == null || _playerController == null) return;
 
         Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-        Debug.Log($"Client: Calling TillServerRpc for {gridPos.x}, {gridPos.y}");
-        gridNetwork.TillServerRpc(gridPos.x, gridPos.y);
+        Debug.Log($"Client: Requesting till for {gridPos.x}, {gridPos.y}");
+        _playerController.RequestTillServerRpc(gridPos.x, gridPos.y);
     }
     protected override void AltUse(){}
 
@@ -32,6 +34,14 @@ public class HoeTool : Tool
         {
             gridNetwork = FarmGridNetwork.Instance;
             Debug.Log($"Resolved gridNetwork: {gridNetwork != null}");
+        }
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponentInParent<PlayerController>();
         }
     }
 }

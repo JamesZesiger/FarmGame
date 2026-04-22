@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class FarmGridNetwork : NetworkBehaviour
 {
@@ -64,61 +65,99 @@ public class FarmGridNetwork : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void TillServerRpc(int x, int y)
     {
-        ResolveGrid();
-        if (grid == null) return;
-
-        Debug.Log($"Server: Tilling tile at {x}, {y}");
-        grid.TryTillTile(x, y);
+        TillOnServer(x, y);
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void UntillServerRpc(int x, int y)
     {
-        ResolveGrid();
-        if (grid == null) return;
-
-        grid.TryUntillTile(x, y);
+        UntillOnServer(x, y);
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void WaterServerRpc(int x, int y)
     {
-        ResolveGrid();
-        if (grid == null) return;
-
-        grid.WaterTile(x, y);
+        WaterOnServer(x, y);
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void PlantServerRpc(int x, int y, string cropName)
     {
-        ResolveGrid();
-        if (grid == null) return;
-        CropData cropData = grid.GetCropData(cropName);
-        if (cropData == null) return;
-
-        grid.PlantCrop(x, y, cropData);
+        PlantOnServer(x, y, cropName);
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void HarvestServerRpc(int x, int y, ServerRpcParams rpcParams = default)
     {
+        Inventory inventory = ResolveInventory(rpcParams.Receive.SenderClientId);
+        HarvestOnServer(x, y, inventory, rpcParams.Receive.SenderClientId);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void RemoveStructureServerRpc(int x, int y)
+    {
+        RemoveStructureOnServer(x, y);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void PlaceStructureServerRpc(int x, int y, int structureIndex)
+    {
+        PlaceStructureOnServer(x, y, structureIndex);
+    }
+
+    public bool TillOnServer(int x, int y)
+    {
         ResolveGrid();
-        if (grid == null) return;
+        if (grid == null) return false;
 
-        ulong senderId = rpcParams.Receive.SenderClientId;
+        Debug.Log($"Server: Tilling tile at {x}, {y}");
+        return grid.TryTillTile(x, y);
+    }
 
-        Inventory inventory = ResolveInventory(senderId);
-        if (inventory == null) return;
+    public bool UntillOnServer(int x, int y)
+    {
+        ResolveGrid();
+        if (grid == null) return false;
 
+        return grid.TryUntillTile(x, y);
+    }
+
+    public bool WaterOnServer(int x, int y)
+    {
+        ResolveGrid();
+        if (grid == null) return false;
+
+        return grid.WaterTile(x, y);
+    }
+
+    public bool PlantOnServer(int x, int y, string cropName)
+    {
+        ResolveGrid();
+        if (grid == null) return false;
+
+        CropData cropData = grid.GetCropData(cropName);
+        if (cropData == null) return false;
+
+        return grid.PlantCrop(x, y, cropData);
+    }
+
+    public bool HarvestOnServer(int x, int y, Inventory inventory, ulong targetClientId)
+    {
+        ResolveGrid();
+        Debug.Log("harvest on server:1");
+        if (grid == null) return false;
+    Debug.Log("harvest on server:2");
+        if (inventory == null) return false;
+Debug.Log("harvest on server:3");
         Tile tile = grid.GetTile(x, y);
         CropInstance crop = tile != null ? tile.crop : null;
         Item harvestedItem = crop != null && crop.data != null ? crop.data.item : null;
-
-        if (!grid.TryHarvest(x, y, inventory)) return;
-
+Debug.Log("harvest on server:4");
+        if (!grid.TryHarvest(x, y, inventory)) return false;
+Debug.Log("harvest on server:5");
         if (harvestedItem != null)
         {
+            Debug.Log("harvest on server:6");
             SyncHarvestedItemClientRpc(
                 harvestedItem.itemName,
                 1,
@@ -126,29 +165,38 @@ public class FarmGridNetwork : NetworkBehaviour
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = new[] { senderId }
+                        TargetClientIds = new[] { targetClientId }
                     }
                 }
             );
+            Debug.Log("harvest on server:7");
         }
+
+        return true;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void RemoveStructureServerRpc(int x, int y)
+    public bool RemoveStructureOnServer(int x, int y)
     {
         ResolveGrid();
-        if (grid == null) return;
-
-        grid.RemoveStructure(x, y);
+        Debug.Log("1");
+        if (grid == null) return false;
+        Debug.Log("2");
+        return grid.RemoveStructure(x, y);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void PlaceStructureServerRpc(int x, int y, int structureIndex)
+    public bool PlaceStructureOnServer(int x, int y, int structureIndex)
     {
         ResolveGrid();
-        if (grid == null) return;
+        if (grid == null) return false;
 
-        grid.TryPlaceStructure(x, y, structureIndex);
+        return grid.TryPlaceStructure(x, y, structureIndex);
+    }
+
+    public void LoadSceneForAll(string sceneName)
+    {
+        if (!IsServer || string.IsNullOrWhiteSpace(sceneName)) return;
+
+        LoadSceneClientRpc(sceneName);
     }
 
     [ClientRpc]
@@ -195,6 +243,15 @@ public class FarmGridNetwork : NetworkBehaviour
         }
     }
 
+    [ClientRpc]
+    void LoadSceneClientRpc(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName)) return;
+        if (SceneManager.GetActiveScene().name == sceneName) return;
+
+        SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+    }
+
     void ResolveGrid()
     {
         if (grid == null)
@@ -202,6 +259,16 @@ public class FarmGridNetwork : NetworkBehaviour
             grid = FindFirstObjectByType<FarmGrid>();
             Debug.Log($"Resolved grid: {grid != null}");
         }
+    }
+
+    public static FarmGridNetwork ResolveActive()
+    {
+        if (Instance != null)
+        {
+            return Instance;
+        }
+
+        return FindFirstObjectByType<FarmGridNetwork>();
     }
 
     void SubscribeToGrid()

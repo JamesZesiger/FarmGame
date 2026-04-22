@@ -31,7 +31,7 @@ public class PlayerInteraction : MonoBehaviour
     public void OnInteract()
     {
         ResolveFarmGrid();
-        if (grid == null || gridNetwork == null || preview == null || projector == null) return;
+        if (grid == null || preview == null || projector == null || controller == null) return;
 
         Vector3 dir = projector.transform.forward;
         dir.Normalize();
@@ -48,7 +48,7 @@ public class PlayerInteraction : MonoBehaviour
 
         Vector2Int pos = grid.WorldToGrid(preview.transform.position);
         Debug.Log("player harvesting");
-        gridNetwork.HarvestServerRpc(pos.x, pos.y);
+        controller.RequestHarvestServerRpc(pos.x, pos.y);
     }
 
     void ResolveFarmGrid()

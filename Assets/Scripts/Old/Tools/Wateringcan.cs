@@ -5,6 +5,7 @@ public class Wateringcan : Tool
     private FarmGrid grid;
     private GameObject preview;
     private FarmGridNetwork _gridNetwork;
+    private PlayerController _playerController;
     public override void Initialize(Camera cam, FarmGrid grid, GameObject preview)
     {
         this.grid = grid;
@@ -16,7 +17,8 @@ public class Wateringcan : Tool
 
     public override void Use()
     {
-        if (grid == null || preview == null || _gridNetwork == null)
+        ResolvePlayerController();
+        if (grid == null || preview == null || _playerController == null)
         {
             return;
         }
@@ -26,7 +28,7 @@ public class Wateringcan : Tool
 
         if (tile != null && tile.type != TileType.Building)
         {
-            _gridNetwork.WaterServerRpc(gridPos.x, gridPos.y);
+            _playerController.RequestWaterServerRpc(gridPos.x, gridPos.y);
 
         }
     }
@@ -37,6 +39,14 @@ public class Wateringcan : Tool
         if (_gridNetwork == null)
         {
             _gridNetwork = FarmGridNetwork.Instance;
+        }
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponentInParent<PlayerController>();
         }
     }
 }

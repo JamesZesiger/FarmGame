@@ -12,6 +12,7 @@ public class Hammer : Tool
     public GameObject preview;
     public HammerUI hammerUI;
     public StructureSet structureSet;
+    PlayerController _playerController;
 
     public bool IsOpen { get; private set; }
     
@@ -57,17 +58,18 @@ public class Hammer : Tool
     }
     public override void Use()
     {
-        if (IsOpen || grid == null || preview == null || gridNetwork == null) return;
+        ResolvePlayerController();
+        if (IsOpen || grid == null || preview == null || _playerController == null) return;
+
+        Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
 
         if(hammerUI.selectedIndex == 0)
         {
-            Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-            gridNetwork.RemoveStructureServerRpc(gridPos.x, gridPos.y);
+            _playerController.RequestHammerActionServerRpc(gridPos.x, gridPos.y, 0, true);
         }
         else
         {
-            Vector2Int gridPos = grid.WorldToGrid(preview.transform.position);
-            gridNetwork.PlaceStructureServerRpc(gridPos.x, gridPos.y, hammerUI.selectedIndex);
+            _playerController.RequestHammerActionServerRpc(gridPos.x, gridPos.y, hammerUI.selectedIndex, false);
         }
     }
 
@@ -76,6 +78,14 @@ public class Hammer : Tool
         if (gridNetwork == null)
         {
             gridNetwork = FarmGridNetwork.Instance;
+        }
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponentInParent<PlayerController>();
         }
     }
 }

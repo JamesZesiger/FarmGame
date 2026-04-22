@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 public class FarmGrid : MonoBehaviour
@@ -73,7 +74,7 @@ public class FarmGrid : MonoBehaviour
 
     void Update()
     {
-        if (simulateStateLocally)
+        if (ShouldSimulateState())
         {
             GrowCrops(Time.deltaTime);
             DryTile(Time.deltaTime);
@@ -117,6 +118,16 @@ public class FarmGrid : MonoBehaviour
     public void SetSimulationEnabled(bool enabled)
     {
         simulateStateLocally = enabled;
+    }
+
+    bool ShouldSimulateState()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            return NetworkManager.Singleton.IsServer;
+        }
+
+        return simulateStateLocally;
     }
 
     public CropData GetCropData(string cropName)
@@ -511,22 +522,27 @@ public class FarmGrid : MonoBehaviour
 
     public bool TryHarvest(int x, int z, Inventory targetInventory)
     {
+        Debug.Log("try harvest:1");
         if (targetInventory == null) return false;
-
+Debug.Log("try harvest:2");
         Tile tile = GetTile(x, z);
         if (tile?.crop == null) return false;
-
+Debug.Log("try harvest:3");
         CropInstance crop = tile.crop;
         if (!crop.IsReady()) return false;
-
+Debug.Log("try harvest:4");
         if (crop.data.item != null)
         {
+            Debug.Log("try harvest:5");
             int leftover = targetInventory.AddItem(crop.data.item, 1);
+            Debug.Log("try harvest:6");
             if (leftover > 0) return false;
+            Debug.Log("try harvest:7");
         }
 
         if (crop.data.regrowable)
         {
+            Debug.Log("try harvest:8");
             crop.state = CropState.ReGrowing;
             crop.timer = 0f;
             SpawnCropVisual(x, z);
@@ -550,6 +566,7 @@ public class FarmGrid : MonoBehaviour
         UpdateTrackedCollections(x, z, tile);
         UpdateTileAndNeighbors(x, z);
         NotifyTileStateChanged(x, z);
+        Debug.Log("try harvest:9");
         return true;
     }
 
@@ -653,14 +670,15 @@ public class FarmGrid : MonoBehaviour
     public bool RemoveStructure(int x, int y)
     {
         if (!InBounds(x, y)) return false;
-
+         Debug.Log("3");
         Tile tile = tiles[x, y];
         if (tile.type != TileType.Building) return false;
-
+         Debug.Log("4");
         ClearTileState(tile);
         UpdateTrackedCollections(x, y, tile);
         UpdateTileAndNeighbors(x, y);
         NotifyTileStateChanged(x, y);
+         Debug.Log("done");
         return true;
     }
 

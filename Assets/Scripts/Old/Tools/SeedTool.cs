@@ -5,6 +5,7 @@ public class SeedTool : Tool
     private FarmGrid grid;
     private GameObject preview;
     private FarmGridNetwork _gridNetwork;
+    private PlayerController _playerController;
 
     public CropData cropToPlant;
 
@@ -17,13 +18,14 @@ public class SeedTool : Tool
 
     public override void Use()
     {
-        if (grid == null || preview == null || _gridNetwork == null || cropToPlant == null) return;
+        ResolvePlayerController();
+        if (grid == null || preview == null || _playerController == null || cropToPlant == null) return;
 
         Vector2Int pos = grid.WorldToGrid(preview.transform.position);
         Tile tile = grid.GetTile(pos.x, pos.y);
         if (tile == null || tile.type != TileType.Tilled || tile.crop != null) return;
 
-        _gridNetwork.PlantServerRpc(pos.x, pos.y, cropToPlant.cropName);
+        _playerController.RequestPlantServerRpc(pos.x, pos.y, cropToPlant.cropName);
         if (isConsumable) numUses -= 1;
     }
     protected override void AltUse(){}
@@ -33,6 +35,14 @@ public class SeedTool : Tool
         if (_gridNetwork == null)
         {
             _gridNetwork = FarmGridNetwork.Instance;
+        }
+    }
+
+    void ResolvePlayerController()
+    {
+        if (_playerController == null)
+        {
+            _playerController = GetComponentInParent<PlayerController>();
         }
     }
 }

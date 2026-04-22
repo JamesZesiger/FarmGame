@@ -1039,8 +1039,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
   playerUI: {fileID: 5092032079198476190}
   containerUI: {fileID: 172630985216332818}
-  currentPlayerInventory: {fileID: 3626677945099135927}
-  currentContainerInventory: {fileID: 0}
 --- !u!114 &3061465897325506460
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2120,7 +2118,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2674556313
+  GlobalObjectIdHash: 2381196744
   InScenePlacedSourceGlobalObjectIdHash: 2674556313
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2154,6 +2152,7 @@ MonoBehaviour:
   toolManager: {fileID: 8979028758958042978}
   playerInventory: {fileID: 3626677945099135927}
   playerWallet: {fileID: 4290967324421900643}
+  uiManager: {fileID: 0}
   walkSpeed: 4
   sprintSpeed: 6
   acceleration: 20
